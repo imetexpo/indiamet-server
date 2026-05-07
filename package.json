@@ -46,7 +46,6 @@
   },
   "dependencies": {
     "@google-analytics/data": "^5.2.1",
-    "@sendgrid/mail": "^8.1.6",
     "axios": "^1.5.0",
     "bcryptjs": "^2.4.3",
     "bull": "^4.11.5",
@@ -80,6 +79,7 @@
     "razorpay": "^2.9.6",
     "react-qr-reader": "^3.0.0-beta-1",
     "redis": "^4.6.8",
+    "resend": "^6.12.2",
     "sequelize": "^6.37.7",
     "socket.io": "^4.8.3",
     "swagger-jsdoc": "^6.2.8",

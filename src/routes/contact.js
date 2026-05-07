@@ -6,7 +6,7 @@ const QRCode = require('qrcode');
 // Helper function to generate QR code as buffer
 async function generateQRCodeBuffer(data) {
   try {
-    const qrData = data || "DIEMEX 2026";
+    const qrData = data || "ITS India Tyre Show 2026";
     const buffer = await QRCode.toBuffer(qrData, {
       errorCorrectionLevel: 'H',
       margin: 2,
@@ -64,32 +64,33 @@ function generateInwardTemplate({
             <tr>
               <td style="background:#0F2F5C; padding:40px 30px; text-align:center;">
                 <img 
-                  src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774691470/di_logo_kqo9pa.png"
+                  src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774691470/tyre_logo_kqo9pa.png"
                   style="max-width:220px; display:block; margin:0 auto;"
+                  alt="ITS India Tyre Show Logo"
                 />
-              </td>
-            </tr>
+               </td>
+             </tr>
 
             <!-- STRIP -->
             <tr>
               <td style="background:${stripColor}; height:30px;"></td>
-            </tr>
+             </tr>
 
             <!-- TITLE -->
             <tr>
               <td style="background:${titleColor}; color:#fff; text-align:center; padding:15px; font-size:20px; font-weight:bold;">
                 ${title}
-              </td>
-            </tr>
+               </td>
+             </tr>
 
             <!-- CONTENT -->
             <tr>
               <td style="padding:30px;">
                 <table width="100%" cellpadding="0" cellspacing="0" style="font-size:14px; color:#333;">
                   ${fields}
-                </table>
-              </td>
-            </tr>
+                 </table>
+               </td>
+             </tr>
 
             <!-- FOOTER -->
             <tr>
@@ -102,8 +103,9 @@ function generateInwardTemplate({
                       <img 
                         src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774687173/maxxlogo_lulkwh.png"
                         style="max-width:120px; display:block;"
+                        alt="maX Business Media Logo"
                       />
-                    </td>
+                     </td>
 
                     <!-- RIGHT TEXT -->
                     <td align="right" style="color:#fff; font-size:12px; line-height:1.5;">
@@ -111,17 +113,17 @@ function generateInwardTemplate({
                       Auto Cluster Exhibition Centre, Pune<br/>
                       maX Business Media Pvt Ltd<br/>
                       Bengaluru, India
-                    </td>
+                     </td>
 
-                  </tr>
-                </table>
-              </td>
-            </tr>
+                   </tr>
+                 </table>
+               </td>
+             </tr>
 
-          </table>
-        </td>
-      </tr>
-    </table>
+           </table>
+         </td>
+       </tr>
+     </table>
 
   </body>
   </html>
@@ -153,10 +155,10 @@ router.get("/visitors/all", async (req, res) => {
     } catch (e) {
       return res.status(200).json({ success: true, total: 0, checkedIn: 0 });
     }
-    
+
     const allVisitors = await Visitor.find({});
     const checkedInVisitors = await Visitor.find({ checkedIn: true });
-    
+
     res.json({
       success: true,
       total: allVisitors.length,
@@ -176,11 +178,11 @@ router.get("/visitors/checked-in", async (req, res) => {
     } catch (e) {
       return res.status(200).json({ success: true, visitors: [] });
     }
-    
+
     const checkedInVisitors = await Visitor.find({ checkedIn: true })
       .sort({ checkInTime: -1 })
       .limit(20);
-    
+
     res.json({
       success: true,
       visitors: checkedInVisitors.map(v => ({
@@ -199,47 +201,47 @@ router.get("/visitors/checked-in", async (req, res) => {
 router.post("/visitor/checkin", async (req, res) => {
   try {
     const { visitorCode } = req.body;
-    
+
     if (!visitorCode) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Visitor code is required" 
+      return res.status(400).json({
+        success: false,
+        message: "Visitor code is required"
       });
     }
-    
+
     let Visitor;
     try {
       Visitor = require("../models/Visitor");
     } catch (e) {
-      return res.status(500).json({ 
-        success: false, 
-        message: "Visitor model not found" 
+      return res.status(500).json({
+        success: false,
+        message: "Visitor model not found"
       });
     }
-    
+
     const visitor = await Visitor.findOne({ visitorCode });
-    
+
     if (!visitor) {
-      return res.status(404).json({ 
-        success: false, 
-        message: "Visitor not found" 
+      return res.status(404).json({
+        success: false,
+        message: "Visitor not found"
       });
     }
-    
+
     if (visitor.checkedIn) {
-      return res.status(400).json({ 
-        success: false, 
+      return res.status(400).json({
+        success: false,
         message: "Visitor already checked in",
         alreadyCheckedIn: true,
         checkInTime: visitor.checkInTime
       });
     }
-    
+
     // Update visitor check-in status
     visitor.checkedIn = true;
     visitor.checkInTime = new Date();
     await visitor.save();
-    
+
     res.json({
       success: true,
       message: "Visitor checked in successfully",
@@ -252,13 +254,13 @@ router.post("/visitor/checkin", async (req, res) => {
         checkInTime: visitor.checkInTime
       }
     });
-    
+
   } catch (err) {
     console.error("Check-in error:", err);
-    res.status(500).json({ 
-      success: false, 
-      message: "Server error", 
-      error: err.message 
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: err.message
     });
   }
 });
@@ -283,18 +285,18 @@ router.post("/", async (req, res) => {
     let html = "";
     let visitorCode = null;
     let qrCodeBuffer = null;
-    
+
     // Generate QR code for visitor and delegate registrations
     if (formType === "visitor-registration" || formType === "delegate-registration") {
       // Create a unique visitor code
-      visitorCode = `diemex-${Date.now()}`;
-      
+      visitorCode = `itstyre-${Date.now()}`;
+
       // Create a unique QR code content
-      const qrContent = `DIEMEX 2026\n${formType === "visitor-registration" ? "Visitor" : "Delegate"}\nName: ${data.firstName || ''} ${data.lastName || ''}\nEmail: ${data.email || ''}\nCode: ${visitorCode}\nDate: 8-10 Oct 2026`;
-      
+      const qrContent = `ITS India Tyre Show 2026\n${formType === "visitor-registration" ? "Visitor" : "Delegate"}\nName: ${data.firstName || ''} ${data.lastName || ''}\nEmail: ${data.email || ''}\nCode: ${visitorCode}\nDate: 8-10 Oct 2026`;
+
       // Generate buffer for email attachments
       qrCodeBuffer = await generateQRCodeBuffer(qrContent);
-      
+
       // Save to database if Visitor model exists
       try {
         const Visitor = require("../models/Visitor");
@@ -319,7 +321,7 @@ router.post("/", async (req, res) => {
     // Safely access data with fallbacks to prevent undefined errors
     switch (formType) {
       case "event-brochure":
-        subject = "Your Event Brochure - DIEMEX 2026";
+        subject = "Your Event Brochure - ITS India Tyre Show 2026";
         html = `
           <!DOCTYPE html>
           <html>
@@ -338,19 +340,20 @@ router.post("/", async (req, res) => {
                       <tr>
                       <td align="center" style="padding:30px;">
                         <img 
-                  src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774691470/di_logo_kqo9pa.png"
+                  src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774691470/tyre_logo_kqo9pa.png"
                   style="max-width:220px; display:block; margin:0 auto;"
+                  alt="ITS India Tyre Show Logo"
                 />
                         <p style="margin:5px 0 0; font-size:14px;">
-                          International Die & Mould Exhibition
+                          India's Premier Tyre & Rubber Industry Exhibition
                         </p>
-                        </td>
-                      </tr>
+                         </td>
+                       </tr>
 
-                    </table>
+                     </table>
 
-                  </td>
-                </tr>
+                   </td>
+                 </tr>
 
               <!-- WHITE CARD BODY -->
                 <tr>
@@ -368,14 +371,14 @@ router.post("/", async (req, res) => {
                         </p>
 
                         <p style="text-align:left; font-size:16px;">
-                          Thank you for requesting <strong>DIEMEX 2026</strong> Brochure.
+                          Thank you for requesting <strong>ITS India Tyre Show 2026</strong> Brochure.
                         </p>
 
                         <!-- IMAGE -->
                         <div style="margin:30px 0;">
                           <img 
                             src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774094980/speakers/avatars/suexnf73ytsmdzooski2.png" 
-                            alt="DIEMEX Brochure"
+                            alt="ITS India Tyre Show Brochure"
                             style="width:100%; max-width:450px; border-radius:6px;"
                           />
                         </div>
@@ -406,44 +409,45 @@ router.post("/", async (req, res) => {
 
                         <p style="text-align:left; margin-top:20px;">
                           Best regards,<br/>
-                          <strong>DIEMEX 2026 Team</strong>
+                          <strong>ITS India Tyre Show 2026 Team</strong>
                         </p>
 
-                        </td>
-                      </tr>
+                         </td>
+                       </tr>
 
                     <!-- FOOTER -->
                       <tr>
                       <td style="background:#1E5AA6; color:#fff; padding:15px; text-align:center; font-size:14px;">
                         <strong>8-10 Oct 2026</strong> • Auto Cluster Exhibition Centre, Pune, India
-                        </td>
-                      </tr>
+                         </td>
+                       </tr>
 
                       <tr>
                       <td style="background:#E6EEF7; padding:20px; font-size:12px; color:#333; text-align:center;">
                         Organizer: <img 
                   src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774687173/maxxlogo_lulkwh.png"
                   style="max-width:220px; display:block; margin:0 auto;"
+                  alt="maX Business Media Logo"
                 /><br/>
                         T9, Swastik Manandi Arcade, Bengaluru, India<br/>
-                        Tel: +91 80 40682257 | pad@maxxmedia.in | www.diemex.in
-                        </td>
-                      </tr>
+                        Tel: +91 80 40682257 | pad@maxxmedia.in | www.itstyreshow.in
+                         </td>
+                       </tr>
 
-                    </table>
+                     </table>
 
-                  </td>
-                </tr>
+                   </td>
+                 </tr>
 
-              </table>
+               </table>
 
           </body>
           </html>
         `;
         break;
-        
+
       case "post-show-report":
-        subject = "Your Post Show Report - DIEMEX 2026";
+        subject = "Your Post Show Report - ITS India Tyre Show 2026";
         html = `
           <!DOCTYPE html>
           <html>
@@ -462,19 +466,20 @@ router.post("/", async (req, res) => {
                       <tr>
                       <td align="center" style="padding:30px;">
                         <img 
-                  src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774691470/di_logo_kqo9pa.png"
+                  src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774691470/tyre_logo_kqo9pa.png"
                   style="max-width:220px; display:block; margin:0 auto;"
+                  alt="ITS India Tyre Show Logo"
                 />
                         <p style="margin:5px 0 0; font-size:14px;">
-                          International Die & Mould Exhibition
+                          India's Premier Tyre & Rubber Industry Exhibition
                         </p>
-                        </td>
-                      </tr>
+                         </td>
+                       </tr>
 
-                    </table>
+                     </table>
 
-                  </td>
-                </tr>
+                   </td>
+                 </tr>
 
               <!-- WHITE CARD BODY -->
                 <tr>
@@ -492,7 +497,7 @@ router.post("/", async (req, res) => {
                         </p>
 
                         <p style="text-align:left; font-size:16px;">
-                          Thank you for requesting <strong>DIEMEX 2026</strong> Post Show Report.
+                          Thank you for requesting <strong>ITS India Tyre Show 2026</strong> Post Show Report.
                         </p>
 
                         <!-- IMAGE -->
@@ -530,44 +535,45 @@ router.post("/", async (req, res) => {
 
                         <p style="text-align:left; margin-top:20px;">
                           Best regards,<br/>
-                          <strong>DIEMEX 2026 Team</strong>
+                          <strong>ITS India Tyre Show 2026 Team</strong>
                         </p>
 
-                        </td>
-                      </tr>
+                         </td>
+                       </tr>
 
                     <!-- FOOTER -->
                       <tr>
                       <td style="background:#1E5AA6; color:#fff; padding:15px; text-align:center; font-size:14px;">
                         <strong>8-10 Oct 2026</strong> • Auto Cluster Exhibition Centre, Pune, India
-                        </td>
-                      </tr>
+                         </td>
+                       </tr>
 
                       <tr>
                       <td style="background:#E6EEF7; padding:20px; font-size:12px; color:#333; text-align:center;">
                         Organizer: <img 
                   src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774687173/maxxlogo_lulkwh.png"
                   style="max-width:220px; display:block; margin:0 auto;"
+                  alt="maX Business Media Logo"
                 /><br/>
                         T9, Swastik Manandi Arcade, Bengaluru, India<br/>
-                        Tel: +91 80 40682257 | pad@maxxmedia.in | www.diemex.in
-                        </td>
-                      </tr>
+                        Tel: +91 80 40682257 | pad@maxxmedia.in | www.itstyreshow.in
+                         </td>
+                       </tr>
 
-                    </table>
+                     </table>
 
-                  </td>
-                </tr>
+                   </td>
+                 </tr>
 
-              </table>
+               </table>
 
           </body>
           </html>
         `;
         break;
-        
+
       case "visitor-registration":
-        subject = "Visitor Registration Confirmed - DIEMEX 2026";
+        subject = "Visitor Registration Confirmed - ITS India Tyre Show 2026";
         html = `
           <!DOCTYPE html>
           <html>
@@ -586,19 +592,20 @@ router.post("/", async (req, res) => {
                       <tr>
                       <td align="center" style="padding:30px;">
                         <img 
-                  src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774691470/di_logo_kqo9pa.png"
+                  src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774691470/tyre_logo_kqo9pa.png"
                   style="max-width:220px; display:block; margin:0 auto;"
+                  alt="ITS India Tyre Show Logo"
                 />
                         <p style="margin:5px 0 0; font-size:14px;">
-                          International Die & Mould Exhibition
+                          India's Premier Tyre & Rubber Industry Exhibition
                         </p>
-                        </td>
-                      </tr>
+                         </td>
+                       </tr>
 
-                    </table>
+                     </table>
 
-                  </td>
-                </tr>
+                   </td>
+                 </tr>
 
               <!-- WHITE CARD BODY -->
                 <tr>
@@ -619,7 +626,7 @@ router.post("/", async (req, res) => {
                         </p>
 
                         <p style="text-align:left; font-size:16px;">
-                          Thank you for registering to attend <strong>DIEMEX 2026</strong>.<br/>
+                          Thank you for registering to attend <strong>ITS India Tyre Show 2026</strong>.<br/>
                           Below are your registration details and visitor badge.
                         </p>
 
@@ -627,7 +634,7 @@ router.post("/", async (req, res) => {
                         <div style="margin:30px 0; text-align:center;">
                           <div style="background:#fff; padding:20px; border-radius:12px; display:inline-block; box-shadow:0 2px 8px rgba(0,0,0,0.1);">
                             ${qrCodeBuffer ? `<img src="cid:qrcode_${visitorCode}" alt="Visitor QR Code" style="width:200px; height:200px; display:block; margin:0 auto;" />` : '<p>QR Code will be available at the registration desk</p>'}
-                            <p style="margin-top:15px; font-size:14px; font-weight:bold; color:#0F2F5C;">DIEMEX 2026 Visitor Pass</p>
+                            <p style="margin-top:15px; font-size:14px; font-weight:bold; color:#0F2F5C;">ITS India Tyre Show 2026 Visitor Pass</p>
                             <p style="margin:5px 0; font-size:12px; color:#666;">${data.firstName || ''} ${data.lastName || ''}</p>
                             <p style="margin:5px 0; font-size:12px; color:#666; font-weight:bold;">Code: ${visitorCode}</p>
                           </div>
@@ -636,7 +643,7 @@ router.post("/", async (req, res) => {
                         <!-- BUTTON - Download link -->
                         <div style="margin:30px 0;">
                           <a href="data:image/png;base64,${qrCodeBuffer ? qrCodeBuffer.toString('base64') : ''}" 
-                             download="diemex-2026-visitor-badge.png"
+                             download="itstyreshow-2026-visitor-badge.png"
                              style="
                                background:#0F2F5C;
                                color:#ffffff;
@@ -669,44 +676,45 @@ router.post("/", async (req, res) => {
 
                         <p style="text-align:left; margin-top:20px;">
                           Best regards,<br/>
-                          <strong>DIEMEX 2026 Team</strong>
+                          <strong>ITS India Tyre Show 2026 Team</strong>
                         </p>
 
-                        </td>
-                      </tr>
+                         </td>
+                       </tr>
 
                     <!-- FOOTER -->
                       <tr>
                       <td style="background:#1E5AA6; color:#fff; padding:15px; text-align:center; font-size:14px;">
                         <strong>8-10 Oct 2026</strong> • Auto Cluster Exhibition Centre, Pune, India
-                        </td>
-                      </tr>
+                         </td>
+                       </tr>
 
                       <tr>
                       <td style="background:#E6EEF7; padding:20px; font-size:12px; color:#333; text-align:center;">
                         Organizer: <img 
                   src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774687173/maxxlogo_lulkwh.png"
                   style="max-width:220px; display:block; margin:0 auto;"
+                  alt="maX Business Media Logo"
                 /><br/>
                         T9, Swastik Manandi Arcade, Bengaluru, India<br/>
-                        Tel: +91 80 40682257 | pad@maxxmedia.in | www.diemex.in
-                        </td>
-                      </tr>
+                        Tel: +91 80 40682257 | pad@maxxmedia.in | www.itstyreshow.in
+                         </td>
+                       </tr>
 
-                    </table>
+                     </table>
 
-                  </td>
-                </tr>
+                   </td>
+                 </tr>
 
-              </table>
+               </table>
 
           </body>
           </html>
         `;
         break;
-        
+
       case "exhibitor-enquiry":
-        subject = "Your Exhibitor Enquiry - DIEMEX 2026";
+        subject = "Your Exhibitor Enquiry - ITS India Tyre Show 2026";
         html = `
           <!DOCTYPE html>
           <html>
@@ -725,19 +733,20 @@ router.post("/", async (req, res) => {
                       <tr>
                       <td align="center" style="padding:30px;">
                         <img 
-                  src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774691470/di_logo_kqo9pa.png"
+                  src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774691470/tyre_logo_kqo9pa.png"
                   style="max-width:220px; display:block; margin:0 auto;"
+                  alt="ITS India Tyre Show Logo"
                 />
                         <p style="margin:5px 0 0; font-size:14px;">
-                          International Die & Mould Exhibition
+                          India's Premier Tyre & Rubber Industry Exhibition
                         </p>
-                        </td>
-                      </tr>
+                         </td>
+                       </tr>
 
-                    </table>
+                     </table>
 
-                  </td>
-                </tr>
+                   </td>
+                 </tr>
 
               <!-- WHITE CARD BODY -->
                 <tr>
@@ -756,7 +765,7 @@ router.post("/", async (req, res) => {
 
                         <p style="font-size:16px;">
                           Thank you for your enquiry about exhibiting at 
-                          <strong>DIEMEX 2026 International Die, Mould & Precision Machinery Expo</strong>.
+                          <strong>ITS India Tyre Show 2026 - India's Premier Tyre, Rubber & Precision Machinery Expo</strong>.
                         </p>
 
                         <p style="font-size:16px;">
@@ -770,39 +779,39 @@ router.post("/", async (req, res) => {
                             <tr>
                             <td width="40%"><strong>Company Name</strong></td>
                             <td>: ${data.companyName || data.company || 'Not provided'}</td>
-                            </tr>
+                             </tr>
 
                             <tr>
                             <td><strong>Contact Person</strong></td>
                             <td>: ${data.firstName || ''} ${data.lastName || ''}</td>
-                            </tr>
+                             </tr>
 
                             <tr>
                             <td><strong>Job Title</strong></td>
                             <td>: ${data.jobTitle || 'Not provided'}</td>
-                            </tr>
+                             </tr>
 
                             <tr>
                             <td><strong>Address</strong></td>
                             <td>: ${data.address || 'Not provided'}</td>
-                            </tr>
+                             </tr>
 
                             <tr>
                             <td><strong>Phone Number</strong></td>
                             <td>: ${data.phone || 'Not provided'}</td>
-                            </tr>
+                             </tr>
 
                             <tr>
                             <td><strong>Email</strong></td>
                             <td>: ${data.email || 'Not provided'}</td>
-                            </tr>
+                             </tr>
 
                             <tr>
                             <td><strong>Space Requirement</strong></td>
                             <td>: ${data.standSize || 'Not specified'}</td>
-                            </tr>
+                             </tr>
 
-                          </table>
+                           </table>
 
                         <p style="font-size:15px;">
                           Our team will get in touch with you shortly to discuss your requirements 
@@ -811,49 +820,50 @@ router.post("/", async (req, res) => {
 
                         <p style="font-size:15px;">
                           We look forward to the opportunity to collaborate with you at 
-                          <strong>DIEMEX 2026!</strong>
+                          <strong>ITS India Tyre Show 2026!</strong>
                         </p>
 
                         <p style="margin-top:20px;">
                           Best regards,<br/>
-                          <strong>DIEMEX 2026 Team</strong>
+                          <strong>ITS India Tyre Show 2026 Team</strong>
                         </p>
 
-                        </td>
-                      </tr>
+                         </td>
+                       </tr>
 
                     <!-- FOOTER -->
                       <tr>
                       <td style="background:#1E5AA6; color:#fff; padding:15px; text-align:center; font-size:14px;">
                         <strong>8-10 Oct 2026</strong> • Auto Cluster Exhibition Centre, Pune, India
-                        </td>
-                      </tr>
+                         </td>
+                       </tr>
 
                       <tr>
                       <td style="background:#E6EEF7; padding:20px; font-size:12px; color:#333; text-align:center;">
                         Organizer: <img 
                   src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774687173/maxxlogo_lulkwh.png"
                   style="max-width:220px; display:block; margin:0 auto;"
+                  alt="maX Business Media Logo"
                 /><br/>
                         T9, Swastik Manandi Arcade, Bengaluru, India<br/>
-                        Tel: +91 80 40682257 | pad@maxxmedia.in | www.diemex.in
-                        </td>
-                      </tr>
+                        Tel: +91 80 40682257 | pad@maxxmedia.in | www.itstyreshow.in
+                         </td>
+                       </tr>
 
-                    </table>
+                     </table>
 
-                  </td>
-                </tr>
+                   </td>
+                 </tr>
 
-              </table>
+               </table>
 
           </body>
           </html>
         `;
         break;
-        
+
       case "delegate-registration":
-        subject = "Delegate Registration Confirmed - DIEMEX 2026";
+        subject = "Delegate Registration Confirmed - ITS India Tyre Show 2026";
         html = `
           <!DOCTYPE html>
           <html>
@@ -872,19 +882,20 @@ router.post("/", async (req, res) => {
                       <tr>
                       <td align="center" style="padding:30px;">
                        <img 
-                  src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774691470/di_logo_kqo9pa.png"
+                  src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774691470/tyre_logo_kqo9pa.png"
                   style="max-width:220px; display:block; margin:0 auto;"
+                  alt="ITS India Tyre Show Logo"
                 />
                         <p style="margin:5px 0 0; font-size:14px;">
-                          International Die & Mould Exhibition
+                          India's Premier Tyre & Rubber Industry Exhibition
                         </p>
-                        </td>
-                      </tr>
+                         </td>
+                       </tr>
 
-                    </table>
+                     </table>
 
-                  </td>
-                </tr>
+                   </td>
+                 </tr>
 
               <!-- WHITE CARD BODY -->
                 <tr>
@@ -905,21 +916,21 @@ router.post("/", async (req, res) => {
 
                         <p style="text-align:left;">
                           Thank you for registering to attend 
-                          <strong>DIEMEX 2026 Conference</strong>.<br/>
+                          <strong>ITS India Tyre Show 2026 Conference</strong>.<br/>
                           Below are your registration details and delegate badge.
                         </p>
 
                         <div style="margin:30px 0; text-align:center;">
                           <div style="background:#fff; padding:20px; border-radius:12px; display:inline-block; box-shadow:0 2px 8px rgba(0,0,0,0.1);">
                             ${qrCodeBuffer ? `<img src="cid:qrcode_${visitorCode}" alt="Delegate QR Code" style="width:200px; height:200px; display:block; margin:0 auto;" />` : '<p>QR Code will be available at the registration desk</p>'}
-                            <p style="margin-top:15px; font-size:14px; font-weight:bold; color:#0F2F5C;">DIEMEX 2026 Delegate Pass</p>
+                            <p style="margin-top:15px; font-size:14px; font-weight:bold; color:#0F2F5C;">ITS India Tyre Show 2026 Delegate Pass</p>
                             <p style="margin:5px 0; font-size:12px; color:#666;">${data.firstName || ''} ${data.lastName || ''}</p>
                             <p style="margin:5px 0; font-size:12px; color:#666; font-weight:bold;">Code: ${visitorCode}</p>
                           </div>
                         </div>
 
                         <a href="data:image/png;base64,${qrCodeBuffer ? qrCodeBuffer.toString('base64') : ''}"
-                           download="diemex-2026-delegate-badge.png"
+                           download="itstyreshow-2026-delegate-badge.png"
                            style="background:#0F2F5C; color:#fff; padding:15px 35px;
                                   text-decoration:none; border-radius:30px; display:inline-block;
                                   cursor:pointer;">
@@ -938,43 +949,44 @@ router.post("/", async (req, res) => {
 
                         <p style="text-align:left; margin-top:20px;">
                           Best regards,<br/>
-                          <strong>DIEMEX 2026 Team</strong>
+                          <strong>ITS India Tyre Show 2026 Team</strong>
                         </p>
 
-                        </td>
-                      </tr>
+                         </td>
+                       </tr>
 
                     <!-- FOOTER -->
                       <tr>
                       <td style="background:#1E5AA6; color:#fff; padding:15px; text-align:center;">
                         <strong>8-10 Oct 2026</strong> • Auto Cluster Exhibition Centre, Pune, India
-                        </td>
-                      \)
+                         </td>
+                       </tr>
 
                       <tr>
                       <td style="background:#E6EEF7; padding:20px; font-size:12px; text-align:center;">
                         Organizer: <img 
                   src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774687173/maxxlogo_lulkwh.png"
                   style="max-width:220px; display:block; margin:0 auto;"
+                  alt="maX Business Media Logo"
                 /><br/>
-                        Bengaluru, India | pad@maxxmedia.in | www.diemex.in
-                        </td>
-                      </tr>
+                        Bengaluru, India | pad@maxxmedia.in | www.itstyreshow.in
+                         </td>
+                       </tr>
 
-                    </table>
+                     </table>
 
-                  </td>
-                </tr>
+                   </td>
+                 </tr>
 
-              </table>
+               </tr>
 
           </body>
           </html>
         `;
         break;
-        
+
       case "partner-registration":
-        subject = "Your Partner Registration Confirmation - DIEMEX Exhibition";
+        subject = "Your Partner Registration Confirmation - ITS India Tyre Show";
         html = `
           <!DOCTYPE html>
           <html>
@@ -996,7 +1008,7 @@ router.post("/", async (req, res) => {
                 <h1>Partner Registration Confirmed! 🤝</h1>
               </div>
               <div class="content">
-                <h2>Welcome to DIEMEX Exhibition Partner Program, ${data.firstName || ''}!</h2>
+                <h2>Welcome to ITS India Tyre Show Partner Program, ${data.firstName || ''}!</h2>
                 <p>Your partner registration has been successfully completed. Here's a summary of your registration details:</p>
                 
                 <hr/>
@@ -1077,6 +1089,7 @@ router.post("/", async (req, res) => {
                 <img 
                   src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774687173/maxxlogo_lulkwh.png"
                   style="max-width:220px; display:block; margin:0 auto;"
+                  alt="maX Business Media Logo"
                 /></p>
               </div>
             </div>
@@ -1086,7 +1099,7 @@ router.post("/", async (req, res) => {
         break;
 
       default:
-        subject = "Your Form Submission - DIEMEX Exhibition";
+        subject = "Your Form Submission - ITS India Tyre Show";
         html = `
           <h2>Thank you for your submission</h2>
           <p>Dear ${data.firstName || 'Valued Customer'},</p>
@@ -1103,15 +1116,15 @@ router.post("/", async (req, res) => {
 
     // Validate email before sending
     if (!data.email) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Email address is required" 
+      return res.status(400).json({
+        success: false,
+        message: "Email address is required"
       });
     }
 
     // Send email to user with their submitted details
     console.log(`📧 Sending email to user: ${data.email}`);
-    
+
     // Prepare email options with attachments for QR code
     if ((formType === "visitor-registration" || formType === "delegate-registration") && qrCodeBuffer) {
       // Use the attachment method from EmailService
@@ -1130,15 +1143,15 @@ router.post("/", async (req, res) => {
       await emailService.sendEmail(data.email, subject, html);
     }
     console.log(`✅ User email sent successfully to ${data.email}`);
-    
+
     // Send notification to admin
     try {
       const adminEmail = 'pad9742@gmail.com';
       console.log(`📧 Sending admin notification to ${adminEmail}`);
-      
+
       // Generate admin email HTML using the same template - FIXED: Removed "None" from template
       let adminHtml = "";
-      
+
       switch (formType) {
         case "delegate-registration":
           adminHtml = generateInwardTemplate({
@@ -1200,10 +1213,10 @@ router.post("/", async (req, res) => {
             data
           });
       }
-      
+
       await emailService.sendEmail(
         adminEmail,
-        `New ${formType} Submission - DIEMEX 2026`,
+        `New ${formType} Submission - ITS India Tyre Show 2026`,
         adminHtml
       );
       console.log(`✅ Admin notification sent to ${adminEmail}`);
@@ -1212,8 +1225,8 @@ router.post("/", async (req, res) => {
       // Don't fail the request if admin notification fails
     }
 
-    return res.status(200).json({ 
-      success: true, 
+    return res.status(200).json({
+      success: true,
       message: "Form submitted successfully. Please check your email for confirmation.",
       visitorCode: visitorCode || null
     });
@@ -1224,19 +1237,19 @@ router.post("/", async (req, res) => {
       message: error.message,
       stack: error.stack
     });
-    
-    return res.status(500).json({ 
-      success: false, 
-      message: "Server error", 
-      error: error.message 
+
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message
     });
   }
 });
 
 // Add a test endpoint
 router.get("/test", (req, res) => {
-  res.json({ 
-    success: true, 
+  res.json({
+    success: true,
     message: "Contact API is working",
     timestamp: new Date().toISOString(),
     environment: {

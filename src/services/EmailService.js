@@ -1,148 +1,111 @@
-const sgMail = require("@sendgrid/mail");
+const { Resend } = require("resend");
 
 class EmailService {
   constructor() {
     this.initialized = false;
+    this.resend = null;
     this.init();
   }
 
   init() {
-    if (!process.env.SENDGRID_API_KEY) {
-      console.error("❌ SENDGRID_API_KEY is missing in environment variables");
+    if (!process.env.RESEND_API_KEY) {
+      console.error("❌ RESEND_API_KEY is missing in environment variables");
       return;
     }
 
-    if (!process.env.SENDGRID_FROM) {
-      console.error("❌ SENDGRID_FROM is missing in environment variables");
+    if (!process.env.RESEND_FROM) {
+      console.error("❌ RESEND_FROM is missing in environment variables");
       return;
     }
 
     try {
-      sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+      this.resend = new Resend(process.env.RESEND_API_KEY);
+
       this.initialized = true;
-      console.log("✅ Email Service initialized with SendGrid");
-      console.log(`📧 From email: ${process.env.SENDGRID_FROM}`);
+
+      console.log("✅ Email Service initialized with Resend");
+      console.log(`📧 From email: ${process.env.RESEND_FROM}`);
     } catch (error) {
-      console.error("❌ Failed to initialize SendGrid:", error.message);
+      console.error("❌ Failed to initialize Resend:", error.message);
     }
   }
 
   async sendEmail(to, subject, html) {
-    // Check if initialized
     if (!this.initialized) {
-      console.error("❌ Email service not initialized. Check your SendGrid configuration.");
-      // For development, log instead of sending
-      console.log("📧 WOULD SEND EMAIL:", { 
-        to, 
-        subject, 
-        htmlLength: html.length,
-        from: process.env.SENDGRID_FROM 
-      });
-      return { success: true, mock: true };
+      console.error("❌ Email service not initialized");
+
+      return {
+        success: false,
+        error: "Resend not initialized",
+      };
     }
 
     try {
-      const msg = {
-        to,
-        from: process.env.SENDGRID_FROM,
-        subject,
-        html,
-      };
-
       console.log(`📧 Attempting to send email:`);
       console.log(`   To: ${to}`);
-      console.log(`   From: ${process.env.SENDGRID_FROM}`);
+      console.log(`   From: ${process.env.RESEND_FROM}`);
       console.log(`   Subject: ${subject}`);
-      console.log(`   HTML Length: ${html.length} characters`);
 
-      const response = await sgMail.send(msg);
+      const response = await this.resend.emails.send({
+        from: process.env.RESEND_FROM,
+        to,
+        subject,
+        html,
+      });
 
       console.log(`✅ Email sent successfully to ${to}`);
-      console.log(`📧 Message ID: ${response[0]?.headers?.['x-message-id'] || 'Unknown'}`);
 
       return {
         success: true,
-        messageId: response[0]?.headers?.['x-message-id'],
+        messageId: response.data?.id,
       };
     } catch (error) {
-      console.error("❌ SendGrid Error Details:");
-      console.error("- Message:", error.message);
-      
-      if (error.response) {
-        console.error("- Status Code:", error.response.statusCode);
-        console.error("- Response Body:", JSON.stringify(error.response.body, null, 2));
-      }
+      console.error("❌ Resend Error:", error);
 
       return {
         success: false,
         error: error.message,
-        details: error.response?.body || 'Unknown error'
       };
     }
   }
 
-  /**
-   * Send email with attachment (QR code, PDF, etc.)
-   */
   async sendEmailWithAttachment({ to, subject, html, attachment }) {
-    // Check if initialized
     if (!this.initialized) {
-      console.error("❌ Email service not initialized. Check your SendGrid configuration.");
-      // For development, log instead of sending
-      console.log("📧 WOULD SEND EMAIL WITH ATTACHMENT:", { 
-        to, 
-        subject, 
-        htmlLength: html.length,
-        attachmentFilename: attachment.filename,
-        from: process.env.SENDGRID_FROM 
-      });
-      return { success: true, mock: true };
+      console.error("❌ Email service not initialized");
+
+      return {
+        success: false,
+        error: "Resend not initialized",
+      };
     }
 
     try {
-      const msg = {
+      const response = await this.resend.emails.send({
+        from: process.env.RESEND_FROM,
         to,
-        from: process.env.SENDGRID_FROM,
         subject,
         html,
-        attachments: [{
-          content: attachment.content.toString('base64'),
-          filename: attachment.filename,
-          type: attachment.contentType || 'image/png',
-          disposition: 'inline',
-          content_id: attachment.cid
-        }]
-      };
 
-      console.log(`📧 Attempting to send email with attachment:`);
-      console.log(`   To: ${to}`);
-      console.log(`   From: ${process.env.SENDGRID_FROM}`);
-      console.log(`   Subject: ${subject}`);
-      console.log(`   Attachment: ${attachment.filename}`);
-      console.log(`   CID: ${attachment.cid}`);
-
-      const response = await sgMail.send(msg);
+        attachments: [
+          {
+            filename: attachment.filename,
+            content: attachment.content,
+          },
+        ],
+      });
 
       console.log(`✅ Email with attachment sent successfully to ${to}`);
-      console.log(`📧 Message ID: ${response[0]?.headers?.['x-message-id'] || 'Unknown'}`);
 
       return {
         success: true,
-        messageId: response[0]?.headers?.['x-message-id'],
+        messageId: response.data?.id,
       };
     } catch (error) {
-      console.error("❌ SendGrid Error Details:");
-      console.error("- Message:", error.message);
-      
-      if (error.response) {
-        console.error("- Status Code:", error.response.statusCode);
-        console.error("- Response Body:", JSON.stringify(error.response.body, null, 2));
-      }
+      console.error("❌ Resend Attachment Error:", error);
 
       return {
         success: false,
         error: error.message,
-        details: error.response?.body || 'Unknown error'
       };
     }
   }
@@ -152,7 +115,7 @@ class EmailService {
    */
   async sendPasswordResetEmail(email, name, resetUrl) {
     const subject = "🔐 Reset Your Password - DIEMEX Exhibitor Portal";
-    
+
     const html = `
       <!DOCTYPE html>
       <html>
@@ -160,102 +123,80 @@ class EmailService {
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Password Reset - DIEMEX</title>
-        <style>
-          @media only screen and (max-width: 600px) {
-            .container { width: 100% !important; }
-            .button { width: 100% !important; display: block !important; }
-          }
-        </style>
       </head>
-      <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background-color: #f5f5f5;">
-        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f5f5f5; padding: 40px 0;">
-           <tr>
-            <td align="center">
-              <table class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); overflow: hidden;">
-                
-                <!-- Header with DIEMEX Branding -->
+
+      <body style="margin:0;padding:0;font-family:Arial,sans-serif;background:#f5f5f5;">
+        <table width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+            <td align="center" style="padding:40px 0;">
+
+              <table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;">
+
                 <tr>
-                  <td style="background: linear-gradient(135deg, #004D9F 0%, #00A3E0 100%); padding: 40px 30px; text-align: center;">
-                    <h1 style="color: white; margin: 0; font-size: 36px; font-weight: 600; letter-spacing: 1px;">DIEMEX</h1>
-                    <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0; font-size: 16px;">Exhibitor Portal</p>
-                   </td>
+                  <td style="background:#004D9F;padding:40px;text-align:center;">
+                    <h1 style="color:#fff;margin:0;">DIEMEX</h1>
+                    <p style="color:#fff;">Exhibitor Portal</p>
+                  </td>
                 </tr>
-                
-                <!-- Main Content -->
+
                 <tr>
-                  <td style="padding: 40px 30px;">
-                    <h2 style="color: #333333; margin: 0 0 20px; font-size: 24px; font-weight: 600;">Password Reset Request</h2>
-                    
-                    <p style="color: #666666; margin: 0 0 20px; font-size: 16px; line-height: 1.6;">
-                      Hello <strong style="color: #004D9F;">${name || 'Exhibitor'}</strong>,
+                  <td style="padding:40px;">
+
+                    <h2>Password Reset Request</h2>
+
+                    <p>Hello <strong>${name || "Exhibitor"}</strong>,</p>
+
+                    <p>
+                      We received a request to reset your password.
                     </p>
-                    
-                    <p style="color: #666666; margin: 0 0 20px; font-size: 16px; line-height: 1.6;">
-                      We received a request to reset the password for your DIEMEX Exhibitor Portal account. 
-                      Click the button below to create a new password:
-                    </p>
-                    
-                    <!-- Reset Button -->
-                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
-                      <tr>
-                        <td align="center" style="padding: 20px 0 30px;">
-                          <a href="${resetUrl}" 
-                             style="background: linear-gradient(135deg, #004D9F 0%, #00A3E0 100%); 
-                                    color: white; 
-                                    padding: 16px 40px; 
-                                    text-decoration: none; 
-                                    border-radius: 50px; 
-                                    font-weight: 600;
-                                    font-size: 16px;
-                                    display: inline-block;
-                                    box-shadow: 0 4px 15px rgba(0, 77, 159, 0.3);
-                                    border: none;">
-                            🔐 Reset My Password
-                          </a>
-                         </td>
-                      </tr>
-                    </table>
-                    
-                    <!-- Security Info Box -->
-                    <div style="background-color: #f8f9fa; border-left: 4px solid #004D9F; padding: 20px; margin: 30px 0; border-radius: 4px;">
-                      <p style="color: #666666; margin: 0 0 10px; font-size: 14px; line-height: 1.6;">
-                        <strong>⚠️ Important Security Information:</strong>
-                      </p>
-                      <p style="color: #666666; margin: 0; font-size: 14px; line-height: 1.6;">
-                        • This link will expire in <strong>1 hour</strong><br>
-                        • If you didn't request this, please ignore this email<br>
-                        • Never share this link with anyone<br>
-                        • DIEMEX team will never ask for your password
-                      </p>
+
+                    <div style="text-align:center;margin:40px 0;">
+                      <a
+                        href="${resetUrl}"
+                        style="
+                          background:#004D9F;
+                          color:#fff;
+                          text-decoration:none;
+                          padding:15px 30px;
+                          border-radius:50px;
+                          display:inline-block;
+                        "
+                      >
+                        Reset Password
+                      </a>
                     </div>
-                    
-                    <!-- Alternative Link -->
-                    <p style="color: #999999; margin: 20px 0 0; font-size: 14px; line-height: 1.6;">
-                      If the button doesn't work, copy and paste this link into your browser:
+
+                    <p>This link expires in 1 hour.</p>
+
+                    <p>
+                      If the button does not work, copy this URL:
                     </p>
-                    <p style="background-color: #f0f0f0; padding: 15px; border-radius: 6px; font-size: 14px; word-break: break-all; margin: 10px 0 0; color: #004D9F;">
+
+                    <p
+                      style="
+                        background:#f1f1f1;
+                        padding:15px;
+                        border-radius:8px;
+                        word-break:break-all;
+                      "
+                    >
                       ${resetUrl}
                     </p>
-                    
-                    <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 40px 0 20px;">
-                    
-                    <!-- Footer -->
-                    <p style="color: #999999; margin: 0 0 10px; font-size: 13px; line-height: 1.6; text-align: center;">
-                      Need help? Contact us at 
-                      <a href="mailto:support@diemex.com" style="color: #004D9F; text-decoration: none;">support@diemex.com</a>
-                    </p>
-                    <p style="color: #999999; margin: 0; font-size: 12px; text-align: center;">
-                      &copy; ${new Date().getFullYear()} DIEMEX Exhibition. All rights reserved.
-                    </p>
-                    <p style="color: #999999; margin: 10px 0 0; font-size: 11px; text-align: center;">
+
+                    <hr />
+
+                    <p style="font-size:12px;color:#999;">
                       This email was sent to ${email}
                     </p>
-                   </td>
+
+                  </td>
                 </tr>
+
               </table>
-             </td>
-           </tr>
-         </table>
+
+            </td>
+          </tr>
+        </table>
       </body>
       </html>
     `;
@@ -264,93 +205,71 @@ class EmailService {
   }
 
   /**
-   * Send password reset confirmation email
+   * Password reset success
    */
   async sendPasswordResetConfirmation(email, name) {
-    const subject = "✅ Password Reset Successful - DIEMEX Exhibitor Portal";
-    
+    const subject =
+      "✅ Password Reset Successful - DIEMEX Exhibitor Portal";
+
     const html = `
       <!DOCTYPE html>
       <html>
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Password Reset Successful - DIEMEX</title>
-        <style>
-          @media only screen and (max-width: 600px) {
-            .container { width: 100% !important; }
-          }
-        </style>
-      </head>
-      <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background-color: #f5f5f5;">
-        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f5f5f5; padding: 40px 0;">
-           <tr>
-            <td align="center">
-              <table class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); overflow: hidden;">
-                
-                <!-- Success Header -->
-                <tr>
-                  <td style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); padding: 40px 30px; text-align: center;">
-                    <div style="background-color: rgba(255,255,255,0.2); width: 80px; height: 80px; border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
-                      <span style="color: white; font-size: 40px;">✓</span>
-                    </div>
-                    <h1 style="color: white; margin: 0; font-size: 28px;">Password Reset Successful!</h1>
-                   </td>
-                </tr>
-                
-                <!-- Main Content -->
-                <tr>
-                  <td style="padding: 40px 30px;">
-                    <h2 style="color: #333333; margin: 0 0 20px; font-size: 22px;">Hello ${name || 'Exhibitor'},</h2>
-                    
-                    <p style="color: #666666; margin: 0 0 20px; font-size: 16px; line-height: 1.6;">
-                      Your password has been successfully reset. You can now log in to your DIEMEX Exhibitor Portal account with your new password.
-                    </p>
-                    
-                    <!-- Login Button -->
-                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
-                      <tr>
-                        <td align="center" style="padding: 20px 0;">
-                          <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/login" 
-                             style="background: linear-gradient(135deg, #004D9F 0%, #00A3E0 100%); 
-                                    color: white; 
-                                    padding: 14px 40px; 
-                                    text-decoration: none; 
-                                    border-radius: 50px; 
-                                    font-weight: 600;
-                                    font-size: 16px;
-                                    display: inline-block;
-                                    box-shadow: 0 4px 15px rgba(0, 77, 159, 0.3);">
-                            🔐 Go to Login
-                          </a>
-                         </td>
-                      </tr>
-                    </table>
-                    
-                    <!-- Security Notice -->
-                    <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 20px; margin: 30px 0; border-radius: 4px;">
-                      <p style="color: #856404; margin: 0; font-size: 14px; line-height: 1.6;">
-                        <strong>🔔 Didn't request this change?</strong><br>
-                        If you did not reset your password, please contact our support team immediately at 
-                        <a href="mailto:support@diemex.com" style="color: #004D9F;">support@diemex.com</a>
-                      </p>
-                    </div>
-                    
-                    <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 30px 0;">
-                    
-                    <!-- Footer -->
-                    <p style="color: #999999; margin: 0; font-size: 12px; text-align: center;">
-                      &copy; ${new Date().getFullYear()} DIEMEX Exhibition. All rights reserved.
-                    </p>
-                    <p style="color: #999999; margin: 10px 0 0; font-size: 11px; text-align: center;">
-                      This email was sent to ${email}
-                    </p>
-                   </td>
-                </tr>
-              </table>
-             </td>
-           </tr>
-         </table>
+      <body style="font-family:Arial,sans-serif;background:#f5f5f5;padding:40px;">
+
+        <div
+          style="
+            max-width:600px;
+            margin:auto;
+            background:#fff;
+            border-radius:12px;
+            overflow:hidden;
+          "
+        >
+
+          <div
+            style="
+              background:#28a745;
+              padding:40px;
+              text-align:center;
+              color:#fff;
+            "
+          >
+            <h1>Password Reset Successful</h1>
+          </div>
+
+          <div style="padding:40px;">
+
+            <p>Hello ${name || "Exhibitor"},</p>
+
+            <p>
+              Your password has been successfully reset.
+            </p>
+
+            <div style="text-align:center;margin-top:30px;">
+              <a
+                href="${process.env.FRONTEND_URL || "http://localhost:3000"}/login"
+                style="
+                  background:#004D9F;
+                  color:#fff;
+                  text-decoration:none;
+                  padding:15px 30px;
+                  border-radius:50px;
+                "
+              >
+                Go To Login
+              </a>
+            </div>
+
+            <hr style="margin-top:40px;" />
+
+            <p style="font-size:12px;color:#999;">
+              This email was sent to ${email}
+            </p>
+
+          </div>
+
+        </div>
+
       </body>
       </html>
     `;
@@ -358,145 +277,207 @@ class EmailService {
     return this.sendEmail(email, subject, html);
   }
 
+  /**
+   * Exhibitor welcome
+   */
   async sendExhibitorWelcome(exhibitor, plainPassword) {
-    const subject = "Welcome to DIEMEX Exhibitor Portal - Login Credentials";
+    const subject =
+      "Welcome to DIEMEX Exhibitor Portal - Login Credentials";
+
     const html = `
       <h2>Welcome to DIEMEX Exhibition Portal</h2>
+
       <p>Dear ${exhibitor.name},</p>
+
       <p>Your exhibitor account has been created successfully.</p>
+
       <hr>
+
       <p><strong>Email:</strong> ${exhibitor.email}</p>
+
       <p><strong>Password:</strong> ${plainPassword}</p>
+
       <hr>
-      <p>Please login and change your password immediately for security.</p>
-      <p>Login here: ${process.env.FRONTEND_URL || 'http://localhost:3000'}/login</p>
-      <p>Best regards,<br/>DIEMEX Exhibition Team</p>
+
+      <p>
+        Please login and change your password immediately for security.
+      </p>
+
+      <p>
+        Login here:
+        ${process.env.FRONTEND_URL || "http://localhost:3000"}/login
+      </p>
+
+      <p>
+        Best regards,<br />
+        DIEMEX Exhibition Team
+      </p>
     `;
+
     return this.sendEmail(exhibitor.email, subject, html);
   }
 
+  /**
+   * Visitor OTP
+   */
   async sendVisitorOTP(email, name, otp) {
     const subject = "Your Verification Code - DIEMEX Exhibition";
+
     const html = `
       <h2>Email Verification</h2>
+
       <p>Dear ${name},</p>
+
       <p>Your OTP for DIEMEX exhibition registration is:</p>
-      <h1 style="font-size:36px; letter-spacing:8px; text-align:center; background:#f0f0f0; padding:20px; border-radius:8px;">${otp}</h1>
+
+      <h1
+        style="
+          font-size:36px;
+          letter-spacing:8px;
+          text-align:center;
+          background:#f0f0f0;
+          padding:20px;
+          border-radius:8px;
+        "
+      >
+        ${otp}
+      </h1>
+
       <p>This code expires in 5 minutes.</p>
+
       <p>If you didn't request this, please ignore this email.</p>
     `;
+
     return this.sendEmail(email, subject, html);
   }
 
+  /**
+   * Visitor confirmation
+   */
   async sendVisitorConfirmation(visitorData) {
     const subject = "Registration Confirmed - DIEMEX Exhibition";
+
     const html = `
       <h2>Registration Confirmed!</h2>
+
       <p>Dear ${visitorData.name},</p>
-      <p>Your registration for DIEMEX Exhibition has been successfully completed.</p>
+
+      <p>
+        Your registration for DIEMEX Exhibition
+        has been successfully completed.
+      </p>
+
       <hr>
+
       <p><strong>Name:</strong> ${visitorData.name}</p>
       <p><strong>Company:</strong> ${visitorData.company}</p>
       <p><strong>Email:</strong> ${visitorData.email}</p>
+
       <hr>
+
       <p>We look forward to seeing you at the exhibition!</p>
-      <p>Best regards,<br/>DIEMEX Team</p>
+
+      <p>
+        Best regards,<br />
+        DIEMEX Team
+      </p>
     `;
+
     return this.sendEmail(visitorData.email, subject, html);
   }
 
-  async sendInvoiceEmail({ to, invoiceNumber, amount, pdfBuffer, dueDate }) {
+  /**
+   * Invoice email
+   */
+  async sendInvoiceEmail({
+    to,
+    invoiceNumber,
+    amount,
+    pdfBuffer,
+    dueDate,
+  }) {
     try {
       const subject = `Invoice ${invoiceNumber} from DIEMEX Exhibition`;
+
       const html = `
         <!DOCTYPE html>
         <html>
-        <head>
-          <meta charset="utf-8">
-          <title>Invoice ${invoiceNumber}</title>
-          <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background: #1e3a8a; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
-            .content { background: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px; }
-            .invoice-details { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
-            .amount { font-size: 24px; color: #10b981; font-weight: bold; }
-            .button { display: inline-block; background: #1e3a8a; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 20px; }
-            .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #6b7280; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>DIEMEX Exhibition</h1>
-              <p>Invoice ${invoiceNumber}</p>
-            </div>
-            <div class="content">
-              <h2>Dear Exhibitor,</h2>
-              <p>Thank you for registering for DIEMEX Exhibition. Please find your invoice attached to this email.</p>
-              
-              <div class="invoice-details">
-                <h3>Invoice Summary</h3>
-                <p><strong>Invoice Number:</strong> ${invoiceNumber}</p>
-                <p><strong>Amount:</strong> <span class="amount">₹${amount.toLocaleString()}</span></p>
-                <p><strong>Due Date:</strong> ${new Date(dueDate).toLocaleDateString('en-IN')}</p>
-              </div>
-              
-              <p><strong>Payment Instructions:</strong></p>
-              <p>Please make the payment via bank transfer to the following account:</p>
-              <ul>
-                <li><strong>Account Name:</strong> Maxx Business Media Pvt. Ltd.</li>
-                <li><strong>Account Number:</strong> 272605000632</li>
-                <li><strong>IFSC Code:</strong> ICIC0002726</li>
-                <li><strong>Bank:</strong> ICICI Bank, New Delhi</li>
-              </ul>
-              
-              <p>Please use your Invoice Number as reference when making the payment.</p>
-              
-              <p>If you have any questions, please don't hesitate to contact us.</p>
-              
-              <p>Best regards,<br>DIEMEX Exhibition Team</p>
-            </div>
-            <div class="footer">
-              <p>DIEMEX Exhibition | www.diemex.com | support@diemex.com</p>
-              <p>This is an automated email. Please do not reply.</p>
-            </div>
+        <body style="font-family:Arial,sans-serif;">
+
+          <div style="max-width:600px;margin:auto;">
+
+            <h1>DIEMEX Exhibition</h1>
+
+            <h2>Invoice ${invoiceNumber}</h2>
+
+            <p>Dear Exhibitor,</p>
+
+            <p>
+              Please find your invoice attached.
+            </p>
+
+            <hr />
+
+            <p>
+              <strong>Invoice Number:</strong>
+              ${invoiceNumber}
+            </p>
+
+            <p>
+              <strong>Amount:</strong>
+              ₹${amount.toLocaleString()}
+            </p>
+
+            <p>
+              <strong>Due Date:</strong>
+              ${new Date(dueDate).toLocaleDateString("en-IN")}
+            </p>
+
+            <hr />
+
+            <p>
+              Best regards,<br />
+              DIEMEX Team
+            </p>
+
           </div>
+
         </body>
         </html>
       `;
-      
+
       return await this.sendEmailWithAttachment({
         to,
         subject,
         html,
+
         attachment: {
           filename: `invoice-${invoiceNumber}.pdf`,
           content: pdfBuffer,
-          cid: `invoice_${invoiceNumber}`,
-          contentType: 'application/pdf'
-        }
+        },
       });
-      
     } catch (error) {
-      console.error('❌ Failed to send invoice email:', error);
+      console.error("❌ Failed to send invoice email:", error);
+
       throw error;
     }
   }
-  
-  // Test method to verify configuration
+
+  /**
+   * Test Resend config
+   */
   async testConnection() {
-    if (!process.env.SENDGRID_API_KEY || !process.env.SENDGRID_FROM) {
-      throw new Error("SendGrid environment variables missing");
+    if (
+      !process.env.RESEND_API_KEY ||
+      !process.env.RESEND_FROM
+    ) {
+      throw new Error(
+        "Resend environment variables missing"
+      );
     }
 
-    if (!this.initialized) {
-      throw new Error("SendGrid not initialized");
-    }
-
-    console.log("✅ SendGrid configuration OK");
-    console.log(`📧 From: ${process.env.SENDGRID_FROM}`);
-    console.log(`🔑 API Key: ${process.env.SENDGRID_API_KEY.substring(0, 10)}...`);
+    console.log("✅ Resend configuration OK");
+    console.log(`📧 From: ${process.env.RESEND_FROM}`);
 
     return true;
   }
