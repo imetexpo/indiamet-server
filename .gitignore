@@ -1,0 +1,63 @@
+# Dependencies
+node_modules/
+
+# Environment files and local credentials
+.env*
+!.env.example
+!.env.sample
+!.env.template
+*.key
+*.p12
+*.pfx
+
+# Logs and diagnostic reports
+logs/
+*.log
+*.log.*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+/report.*.json
+
+# Uploaded files and generated PDFs
+/uploads/
+/src/uploads/
+/src/temp/
+
+# Temporary files, backups, and process IDs
+/tmp/
+/temp/
+/backups/
+/backup/
+/pids/
+*.pid
+*.pid.lock
+*.tmp
+*.temp
+
+# Build output, test coverage, and caches
+/dist/
+/build/
+/coverage/
+/.nyc_output/
+/.cache/
+/.jest-cache/
+.npm/
+.eslintcache
+.stylelintcache
+*.tsbuildinfo
+
+# Local editor files
+.vscode/
+.idea/
+.history/
+*.swp
+*.swo
+*~
+
+# Operating system files
+.DS_Store
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
