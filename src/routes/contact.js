@@ -6,7 +6,7 @@ const QRCode = require('qrcode');
 // Helper function to generate QR code as buffer
 async function generateQRCodeBuffer(data) {
   try {
-    const qrData = data || "ITS India Tyre Show 2026";
+    const qrData = data || "IndiaMet 2027";
     const buffer = await QRCode.toBuffer(qrData, {
       errorCorrectionLevel: 'H',
       margin: 2,
@@ -26,8 +26,8 @@ async function generateQRCodeBuffer(data) {
 
 function generateInwardTemplate({
   title,
-  lightBg,
-  stripColor,
+  lightBg = "#FFFFFF",
+  stripColor = "#003A77",
   titleColor,
   data,
   includeSpace = false
@@ -55,18 +55,17 @@ function generateInwardTemplate({
     <table width="100%" cellpadding="0" cellspacing="0">
       <tr>
         <td align="center" style="padding:40px 0;">
-
           <!-- CARD -->
           <table width="600" cellpadding="0" cellspacing="0"
-            style="background:${lightBg}; border-radius:6px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.1);">
+            style="background:#FFFFFF; border-radius:6px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.1);">
 
             <!-- HEADER -->
             <tr>
-              <td style="background:#0F2F5C; padding:40px 30px; text-align:center;">
+              <td style="background:#FFFFFF; padding:40px 30px; text-align:center;">
                 <img 
-                  src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774691470/tyre_logo_kqo9pa.png"
+                  src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1793946695/indimet_LOGO_cusfu7.png"
                   style="max-width:220px; display:block; margin:0 auto;"
-                  alt="ITS India Tyre Show Logo"
+                  alt="IndiaMet Logo"
                 />
                </td>
              </tr>
@@ -94,7 +93,7 @@ function generateInwardTemplate({
 
             <!-- FOOTER -->
             <tr>
-              <td style="background:#1E5AA6; padding:15px;">
+              <td style="background:#003A77; padding:15px;">
                 <table width="100%">
                   <tr>
                     
@@ -103,15 +102,15 @@ function generateInwardTemplate({
                       <img 
                         src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774687173/maxxlogo_lulkwh.png"
                         style="max-width:120px; display:block;"
-                        alt="maX Business Media Logo"
+                        alt="Maxx Business Media Logo"
                       />
                      </td>
 
                     <!-- RIGHT TEXT -->
                     <td align="right" style="color:#fff; font-size:12px; line-height:1.5;">
-                      <strong>8-10 Oct 2026</strong><br/>
+                      <strong>13-15 May 2027</strong><br/>
                       Auto Cluster Exhibition Centre, Pune<br/>
-                      maX Business Media Pvt Ltd<br/>
+                      Maxx Business Media Pvt Ltd<br/>
                       Bengaluru, India
                      </td>
 
@@ -292,7 +291,7 @@ router.post("/", async (req, res) => {
       visitorCode = `itstyre-${Date.now()}`;
 
       // Create a unique QR code content
-      const qrContent = `ITS India Tyre Show 2026\n${formType === "visitor-registration" ? "Visitor" : "Delegate"}\nName: ${data.firstName || ''} ${data.lastName || ''}\nEmail: ${data.email || ''}\nCode: ${visitorCode}\nDate: 8-10 Oct 2026`;
+      const qrContent = `IndiaMet 2027 \n${formType === "visitor-registration" ? "Visitor" : "Delegate"}\nName: ${data.firstName || ''} ${data.lastName || ''}\nEmail: ${data.email || ''}\nCode: ${visitorCode}\nDate: 8-10 Oct 2026`;
 
       // Generate buffer for email attachments
       qrCodeBuffer = await generateQRCodeBuffer(qrContent);
@@ -321,7 +320,7 @@ router.post("/", async (req, res) => {
     // Safely access data with fallbacks to prevent undefined errors
     switch (formType) {
       case "event-brochure":
-        subject = "Your Event Brochure - ITS India Tyre Show 2026";
+        subject = "Your Event Brochure - IndiaMet 2027 ";
         html = `
           <!DOCTYPE html>
           <html>
@@ -335,17 +334,17 @@ router.post("/", async (req, res) => {
 
                   <!-- BLUE HEADER (INSIDE COLOR AREA) -->
                   <table width="600" cellpadding="0" cellspacing="0" border="0"
-                    style="background:#0F2F5C; border-radius:6px 6px 0 0; color:#fff;">
+                    style="background:#FFFFFF; border-radius:6px 6px 0 0; color:#fff;">
                     
                       <tr>
                       <td align="center" style="padding:30px;">
                         <img 
-                  src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774691470/tyre_logo_kqo9pa.png"
+                  src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1793946695/indimet_LOGO_cusfu7.png"
                   style="max-width:220px; display:block; margin:0 auto;"
-                  alt="ITS India Tyre Show Logo"
+                  alt="IndiaMet Logo"
                 />
                         <p style="margin:5px 0 0; font-size:14px;">
-                          India's Premier Tyre & Rubber Industry Exhibition
+                          IndiaMet 2027 - India's Dedicated Industrial Metrology Exhibition And Summit 
                         </p>
                          </td>
                        </tr>
@@ -371,21 +370,21 @@ router.post("/", async (req, res) => {
                         </p>
 
                         <p style="text-align:left; font-size:16px;">
-                          Thank you for requesting <strong>ITS India Tyre Show 2026</strong> Brochure.
+                          Thank you for requesting <strong>IndiaMet 2027 </strong> Brochure.
                         </p>
 
                         <!-- IMAGE -->
                         <div style="margin:30px 0;">
                           <img 
-                            src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774094980/speakers/avatars/suexnf73ytsmdzooski2.png" 
-                            alt="ITS India Tyre Show Brochure"
+                            src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1793946695/indimet_LOGO_cusfu7.png" 
+                            alt="IndiaMet 2027 Brochure"
                             style="width:100%; max-width:450px; border-radius:6px;"
                           />
                         </div>
 
                         <!-- BUTTON -->
                         <div style="margin:30px 0;">
-                          <a href="https://drive.google.com/your-brochure-link"
+                          <a href="https://res.cloudinary.com/deo4vpw8f/image/upload/v1793947874/IndiaMet_Brochure_compressed_ex2v66.pdf"
                              style="
                                background:#0F2F5C;
                                color:#ffffff;
@@ -409,7 +408,7 @@ router.post("/", async (req, res) => {
 
                         <p style="text-align:left; margin-top:20px;">
                           Best regards,<br/>
-                          <strong>ITS India Tyre Show 2026 Team</strong>
+                          <strong>IndiaMet 2027 Team</strong>
                         </p>
 
                          </td>
@@ -417,8 +416,8 @@ router.post("/", async (req, res) => {
 
                     <!-- FOOTER -->
                       <tr>
-                      <td style="background:#1E5AA6; color:#fff; padding:15px; text-align:center; font-size:14px;">
-                        <strong>8-10 Oct 2026</strong> • Auto Cluster Exhibition Centre, Pune, India
+                      <td style="background:#003A77; color:#fff; padding:15px; text-align:center; font-size:14px;">
+                        <strong>13-15 May 2027 </strong> • Auto Cluster Exhibition Centre, Pune, India
                          </td>
                        </tr>
 
@@ -430,7 +429,7 @@ router.post("/", async (req, res) => {
                   alt="maX Business Media Logo"
                 /><br/>
                         T9, Swastik Manandi Arcade, Bengaluru, India<br/>
-                        Tel: +91 80 40682257 | pad@maxxmedia.in | www.itstyreshow.in
+                        Tel: +91  91483 19993 | pad@maxxmedia.in | wwwindiametexpo.com
                          </td>
                        </tr>
 
@@ -447,7 +446,7 @@ router.post("/", async (req, res) => {
         break;
 
       case "post-show-report":
-        subject = "Your Post Show Report - ITS India Tyre Show 2026";
+        subject = "Your Post Show Report - IndiaMet 2027";
         html = `
           <!DOCTYPE html>
           <html>
@@ -461,17 +460,17 @@ router.post("/", async (req, res) => {
 
                   <!-- BLUE HEADER (INSIDE COLOR AREA) -->
                   <table width="600" cellpadding="0" cellspacing="0" border="0"
-                    style="background:#0F2F5C; border-radius:6px 6px 0 0; color:#fff;">
+                    style="background:#FFFFFF; border-radius:6px 6px 0 0; color:#fff;">
                     
                       <tr>
                       <td align="center" style="padding:30px;">
                         <img 
-                  src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774691470/tyre_logo_kqo9pa.png"
+                  src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1793946695/indimet_LOGO_cusfu7.png"
                   style="max-width:220px; display:block; margin:0 auto;"
-                  alt="ITS India Tyre Show Logo"
+                  alt="IndiaMet 2027 Logo"
                 />
                         <p style="margin:5px 0 0; font-size:14px;">
-                          India's Premier Tyre & Rubber Industry Exhibition
+                          IndiaMet 2027 - India's Dedicated Industrial Metrology Exhibition And Summit 
                         </p>
                          </td>
                        </tr>
@@ -497,13 +496,13 @@ router.post("/", async (req, res) => {
                         </p>
 
                         <p style="text-align:left; font-size:16px;">
-                          Thank you for requesting <strong>ITS India Tyre Show 2026</strong> Post Show Report.
+                          Thank you for requesting <strong>IndiaMet 2027</strong> Post Show Report.
                         </p>
 
                         <!-- IMAGE -->
                         <div style="margin:30px 0;">
                           <img 
-                            src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774094980/speakers/avatars/suexnf73ytsmdzooski2.png" 
+                            src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1793946695/indimet_LOGO_cusfu7.png" 
                             alt="Post Show Report"
                             style="width:100%; max-width:450px; border-radius:6px;"
                           />
@@ -535,7 +534,7 @@ router.post("/", async (req, res) => {
 
                         <p style="text-align:left; margin-top:20px;">
                           Best regards,<br/>
-                          <strong>ITS India Tyre Show 2026 Team</strong>
+                          <strong>IndiaMet 2027 Team</strong>
                         </p>
 
                          </td>
@@ -543,7 +542,7 @@ router.post("/", async (req, res) => {
 
                     <!-- FOOTER -->
                       <tr>
-                      <td style="background:#1E5AA6; color:#fff; padding:15px; text-align:center; font-size:14px;">
+                      <td style="background:#003A77; color:#fff; padding:15px; text-align:center; font-size:14px;">
                         <strong>8-10 Oct 2026</strong> • Auto Cluster Exhibition Centre, Pune, India
                          </td>
                        </tr>
@@ -556,7 +555,7 @@ router.post("/", async (req, res) => {
                   alt="maX Business Media Logo"
                 /><br/>
                         T9, Swastik Manandi Arcade, Bengaluru, India<br/>
-                        Tel: +91 80 40682257 | pad@maxxmedia.in | www.itstyreshow.in
+                        Tel: +91  91483 19993 | pad@maxxmedia.in | www.indiametexpo.com
                          </td>
                        </tr>
 
@@ -573,7 +572,7 @@ router.post("/", async (req, res) => {
         break;
 
       case "visitor-registration":
-        subject = "Visitor Registration Confirmed - ITS India Tyre Show 2026";
+        subject = "Visitor Registration Confirmed - IndiaMet 2027";
         html = `
           <!DOCTYPE html>
           <html>
@@ -587,17 +586,17 @@ router.post("/", async (req, res) => {
 
                   <!-- BLUE HEADER (INSIDE COLOR AREA) -->
                   <table width="600" cellpadding="0" cellspacing="0" border="0"
-                    style="background:#0F2F5C; border-radius:6px 6px 0 0; color:#fff;">
+                    style="background:#FFFFFF; border-radius:6px 6px 0 0; color:#fff;">
                     
                       <tr>
                       <td align="center" style="padding:30px;">
                         <img 
-                  src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774691470/tyre_logo_kqo9pa.png"
+                  src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1793946695/indimet_LOGO_cusfu7.png"
                   style="max-width:220px; display:block; margin:0 auto;"
                   alt="ITS India Tyre Show Logo"
                 />
                         <p style="margin:5px 0 0; font-size:14px;">
-                          India's Premier Tyre & Rubber Industry Exhibition
+                         IndiaMet 2027 - India's Dedicated Industrial Metrology Exhibition And Summit
                         </p>
                          </td>
                        </tr>
@@ -626,7 +625,7 @@ router.post("/", async (req, res) => {
                         </p>
 
                         <p style="text-align:left; font-size:16px;">
-                          Thank you for registering to attend <strong>ITS India Tyre Show 2026</strong>.<br/>
+                          Thank you for registering to attend <strong>IndiaMet  2027</strong>.<br/>
                           Below are your registration details and visitor badge.
                         </p>
 
@@ -634,7 +633,7 @@ router.post("/", async (req, res) => {
                         <div style="margin:30px 0; text-align:center;">
                           <div style="background:#fff; padding:20px; border-radius:12px; display:inline-block; box-shadow:0 2px 8px rgba(0,0,0,0.1);">
                             ${qrCodeBuffer ? `<img src="cid:qrcode_${visitorCode}" alt="Visitor QR Code" style="width:200px; height:200px; display:block; margin:0 auto;" />` : '<p>QR Code will be available at the registration desk</p>'}
-                            <p style="margin-top:15px; font-size:14px; font-weight:bold; color:#0F2F5C;">ITS India Tyre Show 2026 Visitor Pass</p>
+                            <p style="margin-top:15px; font-size:14px; font-weight:bold; color:#0F2F5C;">IndiaMet 2027 Visitor Pass</p>
                             <p style="margin:5px 0; font-size:12px; color:#666;">${data.firstName || ''} ${data.lastName || ''}</p>
                             <p style="margin:5px 0; font-size:12px; color:#666; font-weight:bold;">Code: ${visitorCode}</p>
                           </div>
@@ -676,7 +675,7 @@ router.post("/", async (req, res) => {
 
                         <p style="text-align:left; margin-top:20px;">
                           Best regards,<br/>
-                          <strong>ITS India Tyre Show 2026 Team</strong>
+                          <strong>IndiaMet 2027 Team</strong>
                         </p>
 
                          </td>
@@ -684,8 +683,8 @@ router.post("/", async (req, res) => {
 
                     <!-- FOOTER -->
                       <tr>
-                      <td style="background:#1E5AA6; color:#fff; padding:15px; text-align:center; font-size:14px;">
-                        <strong>8-10 Oct 2026</strong> • Auto Cluster Exhibition Centre, Pune, India
+                      <td style="background:#003A77; color:#fff; padding:15px; text-align:center; font-size:14px;">
+                        <strong>13-15 May 2027</strong> • Auto Cluster Exhibition Centre, Pune, India
                          </td>
                        </tr>
 
@@ -694,10 +693,10 @@ router.post("/", async (req, res) => {
                         Organizer: <img 
                   src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774687173/maxxlogo_lulkwh.png"
                   style="max-width:220px; display:block; margin:0 auto;"
-                  alt="maX Business Media Logo"
+                  alt="Maxx Business Media Logo"
                 /><br/>
                         T9, Swastik Manandi Arcade, Bengaluru, India<br/>
-                        Tel: +91 80 40682257 | pad@maxxmedia.in | www.itstyreshow.in
+                        Tel: +91 91483 19993| pad@maxxmedia.in | www.indiametexpo.com
                          </td>
                        </tr>
 
@@ -714,7 +713,7 @@ router.post("/", async (req, res) => {
         break;
 
       case "exhibitor-enquiry":
-        subject = "Your Exhibitor Enquiry - ITS India Tyre Show 2026";
+        subject = "Your Exhibitor Enquiry - IndiaMet 2027";
         html = `
           <!DOCTYPE html>
           <html>
@@ -728,17 +727,17 @@ router.post("/", async (req, res) => {
 
                   <!-- BLUE HEADER (INSIDE COLOR AREA) -->
                   <table width="600" cellpadding="0" cellspacing="0" border="0"
-                    style="background:#0F2F5C; border-radius:6px 6px 0 0; color:#fff;">
+                    style="background:#003A77; border-radius:6px 6px 0 0; color:#fff;">
                     
                       <tr>
                       <td align="center" style="padding:30px;">
                         <img 
-                  src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774691470/tyre_logo_kqo9pa.png"
+                  src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1793946695/indimet_LOGO_cusfu7.png"
                   style="max-width:220px; display:block; margin:0 auto;"
-                  alt="ITS India Tyre Show Logo"
+                  alt="IndiaMet  Logo"
                 />
                         <p style="margin:5px 0 0; font-size:14px;">
-                          India's Premier Tyre & Rubber Industry Exhibition
+                            IndiaMet 2027 - India's Dedicated Industrial Metrology Exhibition And Summit
                         </p>
                          </td>
                        </tr>
@@ -764,8 +763,8 @@ router.post("/", async (req, res) => {
                         </p>
 
                         <p style="font-size:16px;">
-                          Thank you for your enquiry about exhibiting at 
-                          <strong>ITS India Tyre Show 2026 - India's Premier Tyre, Rubber & Precision Machinery Expo</strong>.
+                          Thank you for your enquiry about eITS IndiaMet 2027- India's Dedicated Industrial Metrology Exhibition And Summit at 
+                          
                         </p>
 
                         <p style="font-size:16px;">
@@ -820,12 +819,12 @@ router.post("/", async (req, res) => {
 
                         <p style="font-size:15px;">
                           We look forward to the opportunity to collaborate with you at 
-                          <strong>ITS India Tyre Show 2026!</strong>
+                          <strong>IndiaMet 2027 - India's Dedicated Industrial Metrology Exhibition And Summit</strong>
                         </p>
 
                         <p style="margin-top:20px;">
                           Best regards,<br/>
-                          <strong>ITS India Tyre Show 2026 Team</strong>
+                          <strong>IndiaMet 2027 - India's Dedicated Industrial Metrology Exhibition And Summit</strong>
                         </p>
 
                          </td>
@@ -833,8 +832,8 @@ router.post("/", async (req, res) => {
 
                     <!-- FOOTER -->
                       <tr>
-                      <td style="background:#1E5AA6; color:#fff; padding:15px; text-align:center; font-size:14px;">
-                        <strong>8-10 Oct 2026</strong> • Auto Cluster Exhibition Centre, Pune, India
+                      <td style="background:#003A77; color:#fff; padding:15px; text-align:center; font-size:14px;">
+                        <strong>13-15 May 2027</strong> • Auto Cluster Exhibition Centre, Pune, India
                          </td>
                        </tr>
 
@@ -843,10 +842,10 @@ router.post("/", async (req, res) => {
                         Organizer: <img 
                   src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774687173/maxxlogo_lulkwh.png"
                   style="max-width:220px; display:block; margin:0 auto;"
-                  alt="maX Business Media Logo"
+                  alt="Maxx Business Media Logo"
                 /><br/>
                         T9, Swastik Manandi Arcade, Bengaluru, India<br/>
-                        Tel: +91 80 40682257 | pad@maxxmedia.in | www.itstyreshow.in
+                        Tel: +91 91483 19993 | pad@maxxmedia.in | www.indiametexpo.com
                          </td>
                        </tr>
 
@@ -863,7 +862,7 @@ router.post("/", async (req, res) => {
         break;
 
       case "delegate-registration":
-        subject = "Delegate Registration Confirmed - ITS India Tyre Show 2026";
+        subject = "Delegate Registration Confirmed - IndiaMet 2027";
         html = `
           <!DOCTYPE html>
           <html>
@@ -877,17 +876,17 @@ router.post("/", async (req, res) => {
 
                   <!-- BLUE HEADER (INSIDE PURPLE) -->
                   <table width="600" cellpadding="0" cellspacing="0" border="0"
-                    style="background:#0F2F5C; border-radius:6px 6px 0 0; color:#fff;">
+                    style="background:#003A77; border-radius:6px 6px 0 0; color:#fff;">
                     
                       <tr>
                       <td align="center" style="padding:30px;">
                        <img 
-                  src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774691470/tyre_logo_kqo9pa.png"
+                  src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1793946695/indimet_LOGO_cusfu7.png"
                   style="max-width:220px; display:block; margin:0 auto;"
-                  alt="ITS India Tyre Show Logo"
+                  alt="IndiaMet 2027 Logo"
                 />
                         <p style="margin:5px 0 0; font-size:14px;">
-                          India's Premier Tyre & Rubber Industry Exhibition
+                          IndiaMet 2027 - India's Dedicated Industrial Metrology Exhibition And Summit 
                         </p>
                          </td>
                        </tr>
@@ -916,14 +915,14 @@ router.post("/", async (req, res) => {
 
                         <p style="text-align:left;">
                           Thank you for registering to attend 
-                          <strong>ITS India Tyre Show 2026 Conference</strong>.<br/>
+                          <strong>IndiaMet 2027  Conference</strong>.<br/>
                           Below are your registration details and delegate badge.
                         </p>
 
                         <div style="margin:30px 0; text-align:center;">
                           <div style="background:#fff; padding:20px; border-radius:12px; display:inline-block; box-shadow:0 2px 8px rgba(0,0,0,0.1);">
                             ${qrCodeBuffer ? `<img src="cid:qrcode_${visitorCode}" alt="Delegate QR Code" style="width:200px; height:200px; display:block; margin:0 auto;" />` : '<p>QR Code will be available at the registration desk</p>'}
-                            <p style="margin-top:15px; font-size:14px; font-weight:bold; color:#0F2F5C;">ITS India Tyre Show 2026 Delegate Pass</p>
+                            <p style="margin-top:15px; font-size:14px; font-weight:bold; color:#0F2F5C;">IndiaMet 2027 Delegate Pass</p>
                             <p style="margin:5px 0; font-size:12px; color:#666;">${data.firstName || ''} ${data.lastName || ''}</p>
                             <p style="margin:5px 0; font-size:12px; color:#666; font-weight:bold;">Code: ${visitorCode}</p>
                           </div>
@@ -949,7 +948,7 @@ router.post("/", async (req, res) => {
 
                         <p style="text-align:left; margin-top:20px;">
                           Best regards,<br/>
-                          <strong>ITS India Tyre Show 2026 Team</strong>
+                          <strong>IndiaMet 2027 Team</strong>
                         </p>
 
                          </td>
@@ -957,7 +956,7 @@ router.post("/", async (req, res) => {
 
                     <!-- FOOTER -->
                       <tr>
-                      <td style="background:#1E5AA6; color:#fff; padding:15px; text-align:center;">
+                      <td style="background:#003A77; color:#fff; padding:15px; text-align:center;">
                         <strong>8-10 Oct 2026</strong> • Auto Cluster Exhibition Centre, Pune, India
                          </td>
                        </tr>
@@ -967,9 +966,9 @@ router.post("/", async (req, res) => {
                         Organizer: <img 
                   src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774687173/maxxlogo_lulkwh.png"
                   style="max-width:220px; display:block; margin:0 auto;"
-                  alt="maX Business Media Logo"
+                  alt="Maxx Business Media Logo"
                 /><br/>
-                        Bengaluru, India | pad@maxxmedia.in | www.itstyreshow.in
+                        Bengaluru, India | pad@maxxmedia.in | www.indiametexpo.com
                          </td>
                        </tr>
 
@@ -1008,7 +1007,7 @@ router.post("/", async (req, res) => {
                 <h1>Partner Registration Confirmed! 🤝</h1>
               </div>
               <div class="content">
-                <h2>Welcome to ITS India Tyre Show Partner Program, ${data.firstName || ''}!</h2>
+                <h2>Welcome to IndiaMet 2027 - India's Dedicated Industrial Metrology Exhibition And Summit  , ${data.firstName || ''}!</h2>
                 <p>Your partner registration has been successfully completed. Here's a summary of your registration details:</p>
                 
                 <hr/>
@@ -1089,7 +1088,7 @@ router.post("/", async (req, res) => {
                 <img 
                   src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774687173/maxxlogo_lulkwh.png"
                   style="max-width:220px; display:block; margin:0 auto;"
-                  alt="maX Business Media Logo"
+                  alt="Maxx Business Media Logo"
                 /></p>
               </div>
             </div>
@@ -1151,12 +1150,14 @@ router.post("/", async (req, res) => {
 
       // Generate admin email HTML using the same template - FIXED: Removed "None" from template
       let adminHtml = "";
+      let adminSubject = "Exhibitor Enquiry - IndiaMet 2027";
 
       switch (formType) {
         case "delegate-registration":
+          adminSubject = "Delegate Registration - IndiaMet 2027";
           adminHtml = generateInwardTemplate({
             title: "New Delegate Registration !",
-            lightBg: "#E8D6DC",
+            lightBg: "#FFFFFF",
             stripColor: "#F2E3E7",
             titleColor: "#A84C7D",
             data: { ...data, visitorCode: visitorCode || 'N/A' }
@@ -1164,9 +1165,10 @@ router.post("/", async (req, res) => {
           break;
 
         case "exhibitor-enquiry":
+          adminSubject = "Exhibitor Enquiry - IndiaMet 2027";
           adminHtml = generateInwardTemplate({
             title: "Exhibitor Enquiry !",
-            lightBg: "#D7EEFB",
+            lightBg: "#FFFFFF",
             stripColor: "#CFE3EE",
             titleColor: "#1F3F4F",
             data,
@@ -1175,29 +1177,32 @@ router.post("/", async (req, res) => {
           break;
 
         case "event-brochure":
+          adminSubject = "Brochure Download - IndiaMet 2027";
           adminHtml = generateInwardTemplate({
             title: "Brochure Download !",
-            lightBg: "#F3E2C7",
+            lightBg: "#FFFFFF",
             stripColor: "#EAD6B8",
-            titleColor: "#F7941D",
+            titleColor: "#93ddd8ff",
             data
           });
           break;
 
         case "post-show-report":
+          adminSubject = "Post Show Report - IndiaMet 2027";
           adminHtml = generateInwardTemplate({
             title: "Post Show Report Download !",
-            lightBg: "#E7EDC9",
+            lightBg: "#FFFFFF",
             stripColor: "#DDE5B2",
-            titleColor: "#F4C400",
+            titleColor: "#00e4f4ff",
             data
           });
           break;
 
         case "visitor-registration":
+          adminSubject = "Visitor Registration - IndiaMet 2027";
           adminHtml = generateInwardTemplate({
             title: "New Visitor Registration !",
-            lightBg: "#DDEFE2",
+            lightBg: "#FFFFFF",
             stripColor: "#CFE3D5",
             titleColor: "#0F8F4F",
             data: { ...data, visitorCode: visitorCode || 'N/A' }
@@ -1205,9 +1210,10 @@ router.post("/", async (req, res) => {
           break;
 
         default:
+          adminSubject = "Exhibitor Enquiry - IndiaMet 2027";
           adminHtml = generateInwardTemplate({
             title: "New Form Submission",
-            lightBg: "#f5f5f5",
+            lightBg: "#FFFFFF",
             stripColor: "#e0e0e0",
             titleColor: "#333",
             data
@@ -1216,7 +1222,7 @@ router.post("/", async (req, res) => {
 
       await emailService.sendEmail(
         adminEmail,
-        `New ${formType} Submission - ITS India Tyre Show 2026`,
+        adminSubject,
         adminHtml
       );
       console.log(`✅ Admin notification sent to ${adminEmail}`);
