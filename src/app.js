@@ -296,6 +296,8 @@ const uploadDirs = [
         const allowedOrigins = [
           'http://localhost:3000',
           'https://tyre-expo.vercel.app',
+          'https://www.indiametexpo.com/',
+
           process.env.FRONTEND_URL
         ].filter(Boolean);
 
