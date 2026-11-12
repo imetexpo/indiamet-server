@@ -58,8 +58,8 @@ class ElectricalRateService {
         whereClause.type = filters.type;
       }
 
-      if (filters.isActive !== undefined && filters.isActive !== 'undefined') {
-        whereClause.isActive = filters.isActive === 'true';
+      if (filters.isActive !== undefined && filters.isActive !== 'undefined' && filters.isActive !== 'all') {
+        whereClause.isActive = filters.isActive === true || filters.isActive === 'true';
       }
 
       if (filters.search && filters.search.trim() !== '') {
@@ -127,8 +127,11 @@ class ElectricalRateService {
       }
 
       // Parse fields
-      if (updateData.ratePerKW) {
-        updateData.ratePerKW = parseInt(updateData.ratePerKW);
+      if (updateData.ratePerKW !== undefined) {
+        updateData.ratePerKW = parseInt(updateData.ratePerKW, 10) || 0;
+      }
+      if (updateData.effectiveTo === '') {
+        updateData.effectiveTo = null;
       }
       if (updateData.isActive !== undefined) {
         updateData.isActive = updateData.isActive === 'true' || updateData.isActive === true;
@@ -168,19 +171,27 @@ class ElectricalRateService {
         effectiveFrom: { [Op.lte]: date }
       };
 
+      const conditions = [
+        {
+          [Op.or]: [
+            { effectiveTo: { [Op.gte]: date } },
+            { effectiveTo: null }
+          ]
+        }
+      ];
+
       if (type !== 'both') {
-        whereClause[Op.or] = [
-          { type: type },
-          { type: 'both' }
-        ];
+        conditions.push({
+          [Op.or]: [
+            { type: type },
+            { type: 'both' }
+          ]
+        });
       } else {
         whereClause.type = 'both';
       }
 
-      whereClause[Op.or] = [
-        { effectiveTo: { [Op.gte]: date } },
-        { effectiveTo: null }
-      ];
+      whereClause[Op.and] = conditions;
 
       const rate = await ElectricalRate.findOne({
         where: whereClause,

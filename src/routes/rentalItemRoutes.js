@@ -85,6 +85,13 @@ router.put(
   upload.single('image'),
   rentalItemController.updateItem
 );
+router.patch(
+  '/:id',
+  authenticate,
+  authorize(['admin']),
+  upload.single('image'),
+  rentalItemController.updateItem
+);
 
 // Delete item
 router.delete(
@@ -121,6 +128,12 @@ router.post(
 // Toggle active status
 router.patch(
   '/:id/toggle-status',
+  authenticate,
+  authorize(['admin']),
+  rentalItemController.toggleActiveStatus
+);
+router.patch(
+  '/:id/status',
   authenticate,
   authorize(['admin']),
   rentalItemController.toggleActiveStatus

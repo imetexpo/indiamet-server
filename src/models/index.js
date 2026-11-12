@@ -24,6 +24,21 @@ const modelFactories = {
     return factory(database.getConnection('mysql'));
   },
 
+  Blog: () => {
+    const factory = require('./mysql/Blog');
+    return factory(database.getConnection('mysql'));
+  },
+
+  VisitorPass: () => {
+    const factory = require('./mysql/VisitorPass');
+    return factory(database.getConnection('mysql'));
+  },
+
+  VisitorPassScan: () => {
+    const factory = require('./mysql/VisitorPassScan');
+    return factory(database.getConnection('mysql'));
+  },
+
   Exhibitor: () => {
     const factory = require('./mysql/Exhibitor');
     return factory(database.getConnection('mysql'));
@@ -207,6 +222,33 @@ async function init() {
       console.log('✅ Database synced successfully');
     } catch (syncError) {
       console.error('❌ Database sync failed:', syncError.message);
+    }
+
+    if (models.Blog) {
+      try {
+        await require('../utils/ensureBlogTable')(models.Blog);
+        console.log('✅ Blogs table ensured');
+      } catch (blogSyncErr) {
+        console.warn('⚠️ Blog table setup warning:', blogSyncErr.message);
+      }
+    }
+
+    if (models.VisitorPass) {
+      try {
+        await models.VisitorPass.sync({ force: false, alter: false });
+        console.log('✅ VisitorPass table ready');
+      } catch (passErr) {
+        console.warn('⚠️ VisitorPass table warning:', passErr.message);
+      }
+    }
+
+    if (models.VisitorPassScan) {
+      try {
+        await models.VisitorPassScan.sync({ force: false, alter: false });
+        console.log('✅ VisitorPassScan table ready');
+      } catch (scanErr) {
+        console.warn('⚠️ VisitorPassScan table warning:', scanErr.message);
+      }
     }
   }
 

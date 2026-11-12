@@ -60,7 +60,7 @@ class RentalItemService {
         category: data.category || 'Other',
         imageUrl,
         cloudinaryPublicId,
-        isActive: data.isActive === 'true' || data.isActive === true,
+        isActive: data.isActive === undefined ? true : (data.isActive === 'true' || data.isActive === true),
         displayOrder
       }, { transaction });
 
@@ -83,12 +83,12 @@ class RentalItemService {
     try {
       const whereClause = {};
 
-      if (filters.category && filters.category !== 'all') {
+      if (filters.category && filters.category !== 'all' && filters.category !== 'undefined') {
         whereClause.category = filters.category;
       }
 
-      if (filters.isActive !== undefined) {
-        whereClause.isActive = filters.isActive === 'true';
+      if (filters.isActive !== undefined && filters.isActive !== 'undefined' && filters.isActive !== 'all') {
+        whereClause.isActive = filters.isActive === true || filters.isActive === 'true';
       }
 
       if (filters.search?.trim()) {
