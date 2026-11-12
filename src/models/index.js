@@ -122,6 +122,22 @@ const modelFactories = {
   const factory = require('./mysql/Visitor');
   return factory(database.getConnection('mysql'));
 },
+  ExhibitorTeam: () => {
+    const factory = require('./mysql/ExhibitorTeam');
+    return factory(database.getConnection('mysql'));
+  },
+  ExhibitorTeamMember: () => {
+    const factory = require('./mysql/ExhibitorTeamMember');
+    return factory(database.getConnection('mysql'));
+  },
+  ManualSection: () => {
+    const factory = require('./mysql/ManualSection');
+    return factory(database.getConnection('mysql'));
+  },
+  ManualImportantDate: () => {
+    const factory = require('./mysql/ManualImportantDate');
+    return factory(database.getConnection('mysql'));
+  },
 
   // ================= MONGO MODELS =================
 

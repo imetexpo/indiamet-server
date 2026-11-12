@@ -85,17 +85,31 @@ router.post('/webhook', async (req, res) => {
       if (payment_status === 'SUCCESS') {
         console.log(`🎉 Payment SUCCESS for ${order_id}`);
 
-        await sequelize.query(`
-          UPDATE invoices 
-          SET status = 'paid',
-              paidDate = ?,
-              updated_at = ?
-          WHERE id = ?
-        `, {
-          replacements: [now, now, order.invoice_id]
-        });
+        const { recordStallPhasePayment, phaseFromRequirementId } = require('../utils/stallPayment');
+        const stallPhase = phaseFromRequirementId(order.requirement_id);
+        const invoiceId = String(order.invoice_id || '');
 
-        console.log(`✅ Invoice ${order.invoice_id} marked as PAID`);
+        if (invoiceId && !invoiceId.startsWith('stall-') && !stallPhase) {
+          await sequelize.query(`
+            UPDATE invoices 
+            SET status = 'paid',
+                paidDate = ?,
+                updated_at = ?
+            WHERE id = ?
+          `, {
+            replacements: [now, now, order.invoice_id]
+          });
+          console.log(`✅ Invoice ${order.invoice_id} marked as PAID`);
+        }
+
+        if (stallPhase) {
+          await recordStallPhasePayment(order.exhibitor_id, stallPhase, {
+            orderId: order_id,
+            paymentId: payment_id,
+            paidAt: now.toISOString(),
+          });
+          console.log(`✅ Stall phase ${stallPhase} marked paid for exhibitor ${order.exhibitor_id}`);
+        }
       }
     }
 
@@ -286,17 +300,31 @@ router.get('/verify-payment/:orderId', authenticateAny, async (req, res) => {
     // ✅ 4. UPDATE INVOICE TO PAID (THIS IS THE MAIN FIX)
     const now = new Date();
 
-    await sequelize.query(`
-      UPDATE invoices
-      SET status = 'paid',
-          paidDate = ?,
-          updated_at = ?
-      WHERE id = ?
-    `, {
-      replacements: [now, now, order.invoice_id]
-    });
+    const invoiceId = String(order.invoice_id || '');
+    const { recordStallPhasePayment, phaseFromRequirementId } = require('../utils/stallPayment');
+    const stallPhase = phaseFromRequirementId(order.requirement_id);
 
-    console.log(`✅ Invoice ${order.invoice_id} marked as PAID`);
+    if (invoiceId && !invoiceId.startsWith('stall-') && !stallPhase) {
+      await sequelize.query(`
+        UPDATE invoices
+        SET status = 'paid',
+            paidDate = ?,
+            updated_at = ?
+        WHERE id = ?
+      `, {
+        replacements: [now, now, order.invoice_id]
+      });
+      console.log(`✅ Invoice ${order.invoice_id} marked as PAID`);
+    }
+
+    if (stallPhase) {
+      await recordStallPhasePayment(order.exhibitor_id, stallPhase, {
+        orderId,
+        paymentId: successfulPayment.cf_payment_id,
+        paidAt: now.toISOString(),
+      });
+      console.log(`✅ Stall phase ${stallPhase} marked paid for exhibitor ${order.exhibitor_id}`);
+    }
 
     return res.json({
       success: true,

@@ -1,4 +1,5 @@
 const exhibitorService = require('../services/ExhibitorService');
+const { buildStallPayment } = require('../utils/stallPayment');
 
 class ExhibitorController {
   // CREATE EXHIBITOR
@@ -47,16 +48,19 @@ class ExhibitorController {
       // Store original password
       const originalPassword = data.password;
       
-      // Prepare stall details with all fields including price
+      // Prepare stall details with all fields including price and payment schedule
+      const payment = buildStallPayment(data.stallDetails || data, {});
       const stallDetails = {
         size: data.boothSize || data.stallDetails?.size || '3m x 3m',
         type: data.boothType || data.stallDetails?.type || 'standard',
+        openSides: data.boothOpenSides || data.stallDetails?.openSides || '',
         dimensions: data.boothDimensions || data.stallDetails?.dimensions || '',
         notes: data.boothNotes || data.stallDetails?.notes || '',
-        price: data.boothPrice || data.stallDetails?.price || data.price || ''
+        price: payment.finalAmount || data.boothPrice || data.stallDetails?.price || data.price || '',
+        ...payment,
       };
       
-      console.log('🏪 Stall details with price:', stallDetails);
+      console.log('🏪 Stall details with price and payment:', stallDetails);
       
       // Store original password in metadata
       const metadata = {
@@ -100,6 +104,12 @@ class ExhibitorController {
       response.boothDimensions = stallDetails.dimensions;
       response.boothNotes = stallDetails.notes;
       response.boothPrice = stallDetails.price;
+      response.stallCost = stallDetails.stallCost;
+      response.gstPercent = stallDetails.gstPercent;
+      response.discount = stallDetails.discount;
+      response.gstAmount = stallDetails.gstAmount;
+      response.finalAmount = stallDetails.finalAmount;
+      response.paymentPhases = stallDetails.paymentPhases;
       
       res.status(201).json({
         success: true,
@@ -346,9 +356,16 @@ class ExhibitorController {
       // Add individual fields for easier access
       data.boothSize = stallDetails?.size || '';
       data.boothType = stallDetails?.type || 'standard';
+      data.boothOpenSides = stallDetails?.openSides || '';
       data.boothDimensions = stallDetails?.dimensions || '';
       data.boothNotes = stallDetails?.notes || '';
       data.boothPrice = stallDetails?.price || '';
+      data.stallCost = stallDetails?.stallCost ?? 0;
+      data.gstPercent = stallDetails?.gstPercent ?? 18;
+      data.discount = stallDetails?.discount ?? 0;
+      data.gstAmount = stallDetails?.gstAmount ?? 0;
+      data.finalAmount = stallDetails?.finalAmount ?? 0;
+      data.paymentPhases = stallDetails?.paymentPhases || [];
       
       res.json({
         success: true,
@@ -389,9 +406,10 @@ class ExhibitorController {
         console.log('🔄 Mapped "active" to "approved" for database');
       }
 
-      // Handle stall details update - PRESERVE ALL FIELDS including price
+      // Handle stall details update - PRESERVE ALL FIELDS including price and payment schedule
       if (updateData.stallDetails || updateData.boothSize || updateData.boothType || 
-          updateData.boothDimensions || updateData.boothNotes || updateData.boothPrice) {
+          updateData.boothOpenSides || updateData.boothDimensions || updateData.boothNotes ||
+          updateData.boothPrice || updateData.stallCost !== undefined || updateData.paymentPhases) {
         
         // Get existing stall details or create new
         let stallDetails = exhibitor.stallDetails || {};
@@ -404,19 +422,23 @@ class ExhibitorController {
             stallDetails = {};
           }
         }
+
+        const payment = buildStallPayment(updateData.stallDetails || updateData, stallDetails);
         
         // Merge with new data
         stallDetails = {
           ...stallDetails,
           size: updateData.boothSize || updateData.stallDetails?.size || stallDetails.size || '',
           type: updateData.boothType || updateData.stallDetails?.type || stallDetails.type || 'standard',
+          openSides: updateData.boothOpenSides || updateData.stallDetails?.openSides || stallDetails.openSides || '',
           dimensions: updateData.boothDimensions || updateData.stallDetails?.dimensions || stallDetails.dimensions || '',
           notes: updateData.boothNotes || updateData.stallDetails?.notes || stallDetails.notes || '',
-          price: updateData.boothPrice || updateData.stallDetails?.price || stallDetails.price || ''
+          price: payment.finalAmount || updateData.boothPrice || updateData.stallDetails?.price || stallDetails.price || '',
+          ...payment,
         };
         
         updateData.stallDetails = stallDetails;
-        console.log('🏪 Updated stallDetails with price:', stallDetails);
+        console.log('🏪 Updated stallDetails with price and payment:', stallDetails);
       }
 
       // Handle metadata update - PRESERVE ORIGINAL PASSWORD
@@ -555,6 +577,15 @@ class ExhibitorController {
             response.stallDetails = {};
           }
         }
+      }
+
+      if (response.stallDetails) {
+        response.stallCost = response.stallDetails.stallCost ?? 0;
+        response.gstPercent = response.stallDetails.gstPercent ?? 18;
+        response.discount = response.stallDetails.discount ?? 0;
+        response.gstAmount = response.stallDetails.gstAmount ?? 0;
+        response.finalAmount = response.stallDetails.finalAmount ?? 0;
+        response.paymentPhases = response.stallDetails.paymentPhases || [];
       }
       
       // Parse metadata

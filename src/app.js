@@ -44,6 +44,7 @@ const extraRequirementsRoutes = require('./routes/extraRequirementsRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const cashfreeRoutes = require('./routes/cashfreeRoutes');
+const exhibitorTeamRoutes = require('./routes/exhibitorTeamRoutes');
 
 class AppServer {
   constructor() {
@@ -687,6 +688,7 @@ setupRoutes() {
   this.app.use('/api/dashboard', dashboardRoutes);
   this.app.use('/api/payments', paymentRoutes);
   this.app.use('/api/cashfree', cashfreeRoutes);
+  this.app.use('/api/exhibitor-team', exhibitorTeamRoutes);
 
   // ======================
   // Documentation & Info
