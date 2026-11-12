@@ -1405,6 +1405,134 @@ router.get('/booth/guidelines', async (req, res) => {
   }
 });
 
+// ==================== PAYMENT ROUTES ====================
+
+// GET stall payment + remainders
+router.get('/payment', async (req, res) => {
+  try {
+    const modelFactory = require('../models');
+    const Exhibitor = modelFactory.getModel('Exhibitor');
+    const { buildStallPayment, schedulePaymentPhases } = require('../utils/stallPayment');
+
+    const exhibitor = await Exhibitor.findByPk(req.user.id);
+
+    if (!exhibitor) {
+      return res.status(404).json({
+        success: false,
+        error: 'Exhibitor not found'
+      });
+    }
+
+    let stallDetails = {};
+    if (exhibitor.stallDetails) {
+      if (typeof exhibitor.stallDetails === 'string') {
+        try {
+          stallDetails = JSON.parse(exhibitor.stallDetails);
+        } catch (err) {
+          stallDetails = {};
+        }
+      } else {
+        stallDetails = exhibitor.stallDetails;
+      }
+    }
+
+    let payment = buildStallPayment(stallDetails, stallDetails);
+    const unpaidWithoutDates = (payment.paymentPhases || []).every(
+      (phase) => !phase.dueDate && phase.status !== 'paid'
+    );
+    if (unpaidWithoutDates && payment.finalAmount > 0) {
+      payment = schedulePaymentPhases(payment);
+      exhibitor.stallDetails = { ...stallDetails, ...payment };
+      exhibitor.changed('stallDetails', true);
+      await exhibitor.save();
+    }
+
+    res.json({
+      success: true,
+      data: {
+        boothNumber: exhibitor.boothNumber || '',
+        company: exhibitor.company || '',
+        boothType: stallDetails.type || '',
+        size: stallDetails.size || '',
+        lastStallPayment: stallDetails.lastStallPayment || null,
+        ...payment,
+      }
+    });
+  } catch (error) {
+    console.error('❌ PAYMENT ERROR:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+router.post('/confirm-stall-payment', async (req, res) => {
+  try {
+    const { recordStallPhasePayment, phaseFromRequirementId, buildStallPayment } = require('../utils/stallPayment');
+    const sequelize = require('../config/database').getConnection('mysql');
+    const { orderId, phase, paymentId } = req.body || {};
+
+    let phaseNumber = Number(phase) || 0;
+    const meta = {
+      orderId: orderId || '',
+      paymentId: paymentId || '',
+      paidAt: new Date().toISOString(),
+    };
+
+    if (orderId) {
+      try {
+        await sequelize.query(`
+          CREATE TABLE IF NOT EXISTS cashfree_orders (
+            id VARCHAR(36) PRIMARY KEY,
+            order_id VARCHAR(100) UNIQUE NOT NULL,
+            invoice_id VARCHAR(36),
+            requirement_id VARCHAR(36),
+            exhibitor_id VARCHAR(36),
+            amount DECIMAL(10,2),
+            order_status VARCHAR(50) DEFAULT 'PENDING',
+            payment_id VARCHAR(100),
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            INDEX idx_order_id (order_id),
+            INDEX idx_invoice_id (invoice_id)
+          )
+        `);
+        const [orders] = await sequelize.query(
+          'SELECT * FROM cashfree_orders WHERE order_id = ? AND exhibitor_id = ?',
+          { replacements: [orderId, req.user.id] }
+        );
+        if (orders && orders.length) {
+          const order = orders[0];
+          phaseNumber = phaseNumber || phaseFromRequirementId(order.requirement_id);
+          meta.orderId = order.order_id;
+          meta.paymentId = paymentId || order.payment_id || '';
+        }
+      } catch (tableErr) {
+        console.warn('cashfree_orders lookup skipped:', tableErr.message);
+      }
+    }
+
+    if (!phaseNumber) {
+      return res.status(400).json({ success: false, error: 'Missing stall payment phase' });
+    }
+
+    const stallDetails = await recordStallPhasePayment(req.user.id, phaseNumber, meta);
+    const payment = buildStallPayment(stallDetails || {}, stallDetails || {});
+
+    res.json({
+      success: true,
+      data: {
+        ...payment,
+        lastStallPayment: stallDetails?.lastStallPayment || null,
+      },
+    });
+  } catch (error) {
+    console.error('CONFIRM STALL PAYMENT ERROR:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // ==================== MANUAL ROUTES ====================
 
 // Get manual
