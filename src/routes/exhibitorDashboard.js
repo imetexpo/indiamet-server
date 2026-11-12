@@ -938,14 +938,11 @@ router.post('/requirements', async (req, res) => {
   try {
     console.log("📝 Submitting requirement for exhibitor:", req.user?.id);
     
-    const { type, description, ...restData } = req.body;
-
-    if (!type || !description) {
-      return res.status(400).json({
-        success: false,
-        error: 'Type and description are required'
-      });
-    }
+    const {
+      type = 'exhibitor',
+      description = 'Exhibitor requirement submission',
+      ...restData
+    } = req.body || {};
 
     // Collect all data
     const completeData = {

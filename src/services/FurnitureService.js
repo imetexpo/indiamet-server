@@ -5,6 +5,23 @@ const cloudinaryService = require('./CloudinaryService');
 class FurnitureService {
   constructor() {
     this.Furniture = null;
+    this.schemaChecked = false;
+  }
+
+  async ensureSchema(Furniture) {
+    if (this.schemaChecked || !Furniture?.sequelize) return;
+    try {
+      const [cols] = await Furniture.sequelize.query("SHOW COLUMNS FROM Furniture LIKE 'isActive'");
+      if (!cols || cols.length === 0) {
+        await Furniture.sequelize.query(
+          "ALTER TABLE Furniture ADD COLUMN isActive TINYINT(1) NOT NULL DEFAULT 1"
+        );
+        console.log('✅ Added isActive column to Furniture table');
+      }
+      this.schemaChecked = true;
+    } catch (err) {
+      console.warn('Furniture schema check warning:', err.message);
+    }
   }
 
   async getFurnitureModel() {
@@ -22,6 +39,7 @@ class FurnitureService {
         throw new Error('Furniture model not available');
       }
     }
+    await this.ensureSchema(this.Furniture);
     return this.Furniture;
   }
 
@@ -49,7 +67,8 @@ class FurnitureService {
         size: data.size || null,
         cost3Days: parseInt(data.cost3Days) || 0,
         category: data.category || 'Furniture',
-        inStock: data.inStock === 'true' || data.inStock === true,
+        inStock: data.inStock === undefined ? true : (data.inStock === 'true' || data.inStock === true),
+        isActive: data.isActive === undefined ? true : (data.isActive === 'true' || data.isActive === true),
         imageUrl,
         cloudinaryPublicId
       });
@@ -71,8 +90,8 @@ class FurnitureService {
         whereClause.category = filters.category;
       }
 
-      if (filters.inStock !== undefined && filters.inStock !== 'undefined') {
-        whereClause.inStock = filters.inStock === 'true';
+      if (filters.inStock !== undefined && filters.inStock !== 'undefined' && filters.inStock !== 'all') {
+        whereClause.inStock = filters.inStock === true || filters.inStock === 'true';
       }
 
       if (filters.search && filters.search.trim() !== '') {
@@ -140,9 +159,13 @@ class FurnitureService {
 
       // Update fields
       if (updateData.code) updateData.code = updateData.code.toUpperCase();
-      if (updateData.cost3Days) updateData.cost3Days = parseInt(updateData.cost3Days);
+      if (updateData.cost3Days !== undefined) updateData.cost3Days = parseInt(updateData.cost3Days, 10) || 0;
+      if (updateData.size === '') updateData.size = null;
       if (updateData.inStock !== undefined) {
         updateData.inStock = updateData.inStock === 'true' || updateData.inStock === true;
+      }
+      if (updateData.isActive !== undefined) {
+        updateData.isActive = updateData.isActive === 'true' || updateData.isActive === true;
       }
 
       await furniture.update(updateData);
@@ -184,6 +207,7 @@ class FurnitureService {
 
       const totalItems = await Furniture.count();
       const inStock = await Furniture.count({ where: { inStock: true } });
+      const active = await Furniture.count({ where: { isActive: true } });
       const outOfStock = await Furniture.count({ where: { inStock: false } });
 
       const categoryStats = await Furniture.findAll({
@@ -203,6 +227,7 @@ class FurnitureService {
         data: {
           totalItems,
           inStock,
+          active,
           outOfStock,
           categories: categories.map(c => c.category),
           categoryStats: categoryStats || []

@@ -88,6 +88,13 @@ router.put(
   upload.single('image'),
   furnitureController.updateFurniture
 );
+router.patch(
+  '/:id',
+  authenticate,
+  authorize(['admin']),
+  upload.single('image'),
+  furnitureController.updateFurniture
+);
 
 // Delete furniture
 router.delete(
