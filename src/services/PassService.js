@@ -23,6 +23,7 @@ const modelFactory = require('../models');
 const messaging = require('./PassMessagingService');
 const emailService = require('./EmailService');
 const cloudinaryService = require('./CloudinaryService');
+const { uploadBadgeImageToCloudinary } = require('../utils/badgeRenderer');
 
 // ============================================================================
 // CONFIGURATION CONSTANTS & TIMEOUTS
@@ -787,29 +788,12 @@ async function deliverPass(pass, channel) {
   const passUrl = passViewUrl(pass.publicCode);
 
   let mediaUrl = null;
-  // If delivering via WhatsApp and Cloudinary is configured, generate and upload QR image
-  if (sendChannel === 'whatsapp' && process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY) {
+  // If delivering via WhatsApp, generate and upload the official visitor badge in the admin-chosen design
+  if (sendChannel === 'whatsapp') {
     try {
-      const qrPayload = pass.qrPayload || buildQrPayload(pass);
-      const qrBuffer = await QRCode.toBuffer(qrPayload, {
-        errorCorrectionLevel: 'H',
-        margin: 2,
-        width: 500,
-        color: {
-          dark: '#0F2F5C',
-          light: '#FFFFFF'
-        }
-      });
-      const uploadRes = await cloudinaryService.uploadImage(qrBuffer, {
-        folder: 'visitor-passes',
-        public_id: `qr-${pass.registrationNumber}`,
-        overwrite: true
-      });
-      if (uploadRes?.secure_url) {
-        mediaUrl = uploadRes.secure_url;
-      }
+      mediaUrl = await uploadBadgeImageToCloudinary(pass);
     } catch (err) {
-      console.warn('[PassService] Cloudinary QR upload skipped:', err.message);
+      console.warn('[PassService] Badge image upload to Cloudinary failed:', err.message);
     }
   }
 
@@ -1141,7 +1125,7 @@ async function sendEmailPass(pass, passUrl) {
     <p><strong>${pass.registrationNumber}</strong></p>
     <p>Open this link on your phone and show the QR at the entrance:</p>
     <p><a href="${passUrl}">${passUrl}</a></p>
-    <p>12–14 May 2027 · Auto Cluster Exhibition Centre, Pune</p>
+    <p>13–15 May 2027 · Auto Cluster Exhibition Centre, Pune</p>
   `;
   const result = await emailService.sendEmail(to, 'Your IndiaMET 2027 Visitor Pass', html);
   if (result?.success) {
@@ -1229,6 +1213,7 @@ module.exports = {
   verifyOtp,
   completeRegistration,
   resendPass,
+  deliverPass,
   getPassByCode,
   recordScan,
   issueContactPass,

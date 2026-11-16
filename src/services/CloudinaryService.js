@@ -80,6 +80,11 @@ class CloudinaryService {
     }
   }
 
+  async uploadImage(fileBuffer, options = {}) {
+    const res = await this.uploadFile(fileBuffer, { resource_type: 'image', ...options });
+    return { ...res, secure_url: res.url };
+  }
+
   async deleteFile(publicId) {
     try {
       this.configure();
