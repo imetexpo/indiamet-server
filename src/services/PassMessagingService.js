@@ -87,7 +87,7 @@ class PassMessagingService {
       const service = this.twilioClient().verify.v2.services(serviceSid);
       // Read the actual service length so the browser renders the right number of inputs.
       if (!this.verifySettings || this.verifySettings.sid !== serviceSid ||
-          this.verifySettings.expiresAt < Date.now()) {
+        this.verifySettings.expiresAt < Date.now()) {
         const settings = await service.fetch();
         this.verifySettings = {
           sid: serviceSid,
@@ -126,7 +126,7 @@ class PassMessagingService {
       templateData: {
         name, registrationNumber, passUrl, mediaUrl,
         publicCode: passUrl.split('/').filter(Boolean).pop(),
-        eventName: 'IndiaMET 2027', eventDates: '12–14 May 2027',
+        eventName: 'IndiaMET 2027', eventDates: '13–15 May 2027',
         venue: 'Auto Cluster Exhibition Centre, Pune'
       }
     });
