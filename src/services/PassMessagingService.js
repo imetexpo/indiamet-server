@@ -71,7 +71,7 @@ class PassMessagingService {
 
   async sendOtp({ phone, channel, otp }) {
     if (this.verifyReady()) return this.startVerification({ phone, channel });
-    const message = 'DIEMEX: Your verification code is ' + otp + '. Valid for 10 minutes. Do not share.';
+    const message = 'IndiaMET: Your verification code is ' + otp + '. Valid for 10 minutes. Do not share.';
     const result = await this.sendMessage({
       phone, channel, message, kind: 'otp', templateData: { otp }
     });
@@ -119,14 +119,14 @@ class PassMessagingService {
   }
 
   async sendPass({ phone, channel, name, registrationNumber, passUrl, mediaUrl }) {
-    const message = 'DIEMEX 2027: Hi ' + name + ', your visitor pass ' +
+    const message = 'IndiaMET 2027: Hi ' + name + ', your visitor pass ' +
       registrationNumber + ' is ready. Show this QR at entry: ' + passUrl;
     const result = await this.sendMessage({
       phone, channel, message, mediaUrl, kind: 'pass',
       templateData: {
         name, registrationNumber, passUrl, mediaUrl,
         publicCode: passUrl.split('/').filter(Boolean).pop(),
-        eventName: 'DIEMEX 2027', eventDates: '24–26 Mar 2027',
+        eventName: 'IndiaMET 2027', eventDates: '12–14 May 2027',
         venue: 'Auto Cluster Exhibition Centre, Pune'
       }
     });
@@ -136,7 +136,7 @@ class PassMessagingService {
   async sendVisitorBadgeWhatsApp({ phone, badgeUrl, registrationNumber }) {
     return this.sendMessage({
       phone, channel: 'whatsapp', kind: 'pass', mediaUrl: badgeUrl,
-      message: 'DIEMEX 2027 visitor badge: ' + registrationNumber,
+      message: 'IndiaMET 2027 visitor badge: ' + registrationNumber,
       templateData: { registrationNumber, mediaUrl: badgeUrl }
     });
   }
@@ -153,7 +153,7 @@ class PassMessagingService {
     try {
       let response;
       if (provider === 'twilio' && channel === 'whatsapp') {
-        response = await this.sendTwilioWhatsApp(phone, kind, templateData);
+        response = await this.sendTwilioWhatsApp(phone, kind, templateData, message, mediaUrl);
       } else if (provider === 'twilio') {
         response = await this.sendTwilioSms(phone, message);
       } else if (provider === 'meta') {
@@ -166,6 +166,7 @@ class PassMessagingService {
         messageSid: response?.sid || null, status: response?.status || 'accepted'
       };
     } catch (error) {
+      console.error('[PassMessaging] ' + channel + ' ' + kind + ' error:', error?.response?.data || error.message);
       return { success: false, provider, error: this.describeError(error) };
     }
   }
@@ -209,19 +210,38 @@ class PassMessagingService {
     return result;
   }
 
-  async sendTwilioWhatsApp(phone, kind, values) {
+  async sendTwilioWhatsApp(phone, kind, values = {}, bodyText = '', mediaUrl = null) {
+    const formattedPhone = String(phone || '').trim().replace(/^[^\d+]+/, '');
+    const toPhone = formattedPhone.startsWith('+') ? formattedPhone : '+' + formattedPhone.replace(/\D/g, '');
     const sid = kind === 'otp'
       ? process.env.TWILIO_WHATSAPP_OTP_CONTENT_SID
       : (process.env.TWILIO_WHATSAPP_PASS_CONTENT_SID || process.env.TWILIO_WHATSAPP_CONTENT_SID);
-    if (!sid?.trim()) {
-      throw new Error('Configure an approved WhatsApp ' + kind + ' Content SID before sending.');
+
+    if (sid && sid.trim()) {
+      const params = new URLSearchParams({
+        To: 'whatsapp:' + toPhone,
+        From: this.whatsAppFrom(),
+        ContentSid: sid.trim(),
+        ContentVariables: JSON.stringify(this.templateVariables(kind, values))
+      });
+      const result = await axios.post(this.twilioMessagesUrl(), params, {
+        auth: this.twilioAuth(), timeout: 15000
+      });
+      return result.data;
     }
-    // Template messages work outside a customer service window. Do not mix Body/MediaUrl with ContentSid.
+
+    // Standard WhatsApp delivery using Body parameter
+    const message = bodyText || values.message ||
+      `IndiaMET 2027: Hi ${values.name || 'Visitor'}, your visitor pass ${values.registrationNumber || ''} is ready. Show this QR at entry: ${values.passUrl || ''}`;
     const params = new URLSearchParams({
-      To: 'whatsapp:' + phone, From: this.whatsAppFrom(),
-      ContentSid: sid.trim(),
-      ContentVariables: JSON.stringify(this.templateVariables(kind, values))
+      To: 'whatsapp:' + toPhone,
+      From: this.whatsAppFrom(),
+      Body: message
     });
+    const media = mediaUrl || values.mediaUrl;
+    if (media) {
+      params.append('MediaUrl', media);
+    }
     const result = await axios.post(this.twilioMessagesUrl(), params, {
       auth: this.twilioAuth(), timeout: 15000
     });
@@ -250,7 +270,7 @@ class PassMessagingService {
     await axios.get('https://api.msg91.com/api/sendhttp.php', {
       params: {
         authkey: process.env.MSG91_AUTH_KEY, mobiles: phone.replace('+', ''),
-        message, sender: process.env.MSG91_SENDER_ID || 'DIEMEX', route: 4, country: 91
+        message, sender: process.env.MSG91_SENDER_ID || 'INDMET', route: 4, country: 91
       },
       timeout: 15000
     });

@@ -62,7 +62,7 @@ const sendLog = new Map();
 /** Official Exhibition Metadata attached to every badge */
 const EVENT = {
   name: 'IndiaMET 2027',
-  dates: '12–14 May 2027',
+  dates: '13–15 May 2027',
   venue: 'Auto Cluster Exhibition Centre, Pune'
 };
 
@@ -180,8 +180,8 @@ function generatePublicCode() {
 }
 
 /**
- * Generates the official sequential DIEMEX registration number.
- * Example: "REG-DMX-24032027-104928"
+ * Generates the official sequential IndiaMET registration number.
+ * Example: "REG-IM-12052027-104928"
  * 
  * WHY IT IS USED:
  * Provides a standardized, human-readable registration ID for badges and printing.
@@ -194,7 +194,7 @@ function generateRegistrationNumber() {
   const mm = String(now.getMonth() + 1).padStart(2, '0');
   const yyyy = String(now.getFullYear());
   const seq = String(crypto.randomInt(0, 1000000)).padStart(6, '0');
-  return `REG-DMX-${dd}${mm}${yyyy}-${seq}`;
+  return `REG-IM-${dd}${mm}${yyyy}-${seq}`;
 }
 
 /**
@@ -203,10 +203,10 @@ function generateRegistrationNumber() {
  * WHY IT IS USED:
  * Dynamically builds absolute pass URLs for WhatsApp messages and emails.
  * 
- * @returns {string} Base URL (e.g., "https://diemex.in" or "http://localhost:3001")
+ * @returns {string} Base URL (e.g., "https://indiametexpo.com" or "http://localhost:3000")
  */
 function frontendBase() {
-  return (process.env.FRONTEND_URL || 'http://localhost:3001').replace(/\/$/, '');
+  return (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '');
 }
 
 /**
@@ -886,7 +886,7 @@ async function findPassByCode(code) {
   const pass = await VisitorPass.findOne({
     where: { [Op.or]: [{ publicCode: lookup }, { registrationNumber: lookup }] }
   });
-  if (pass || !/^diemex-[a-zA-Z0-9-]+$/.test(lookup)) return pass;
+  if (pass || !/^(indiamet|diemex)-[a-zA-Z0-9-]+$/.test(lookup)) return pass;
 
   // Older emailed passes live in contact_submissions. Import only a persisted registration.
   const models = await modelFactory.init();
@@ -963,7 +963,7 @@ async function issueContactPass({ formType, data, verificationToken }) {
       }
     });
   }
-  const code = 'diemex-' + crypto.randomBytes(8).toString('hex');
+  const code = 'indiamet-' + crypto.randomBytes(8).toString('hex');
   const pass = await createContactPassRecord(code, data, formType);
   return { success: true, pass: await serializePass(pass), delivery: null };
 }
@@ -1137,13 +1137,13 @@ async function sendEmailPass(pass, passUrl) {
 
   const html = `
     <p>Dear ${pass.name},</p>
-    <p>Your DIEMEX 2027 visitor pass is ready.</p>
+    <p>Your IndiaMET 2027 visitor pass is ready.</p>
     <p><strong>${pass.registrationNumber}</strong></p>
     <p>Open this link on your phone and show the QR at the entrance:</p>
     <p><a href="${passUrl}">${passUrl}</a></p>
-    <p>24–26 Mar 2027 · Auto Cluster Exhibition Centre, Pune</p>
+    <p>12–14 May 2027 · Auto Cluster Exhibition Centre, Pune</p>
   `;
-  const result = await emailService.sendEmail(to, 'Your DIEMEX 2027 Visitor Pass', html);
+  const result = await emailService.sendEmail(to, 'Your IndiaMET 2027 Visitor Pass', html);
   if (result?.success) {
     return { success: true, provider: result.provider || 'email', passUrl };
   }
