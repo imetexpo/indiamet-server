@@ -137,6 +137,27 @@ module.exports = (sequelize) => {
       type: DataTypes.DATE,
       allowNull: true,
       field: 'verifiedAt'
+    },
+    cmsLeadId: {
+      type: DataTypes.STRING(64),
+      allowNull: true,
+      field: 'cmsLeadId'
+    },
+    cmsStatus: {
+      type: DataTypes.STRING(20),
+      allowNull: true,
+      defaultValue: 'pending',
+      field: 'cmsStatus'
+    },
+    cmsSyncedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      field: 'cmsSyncedAt'
+    },
+    cmsError: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      field: 'cmsError'
     }
   }, {
     tableName: 'visitor_passes',

@@ -134,9 +134,13 @@ const modelFactories = {
     return factory(database.getConnection('mysql'));
   },
   Visitor: () => {
-  const factory = require('./mysql/Visitor');
-  return factory(database.getConnection('mysql'));
-},
+    const factory = require('./mysql/Visitor');
+    return factory(database.getConnection('mysql'));
+  },
+  ContactSubmission: () => {
+    const factory = require('./mysql/ContactSubmission');
+    return factory(database.getConnection('mysql'));
+  },
   ExhibitorTeam: () => {
     const factory = require('./mysql/ExhibitorTeam');
     return factory(database.getConnection('mysql'));

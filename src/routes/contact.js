@@ -1,7 +1,45 @@
 const express = require("express");
 const router = express.Router();
 const emailService = require("../services/EmailService");
+const passService = require("../services/PassService");
+const modelFactory = require("../models");
 const QRCode = require('qrcode');
+
+let contactTableReady = false;
+
+async function saveContactSubmission(formType, data, emailStatus = "pending") {
+  try {
+    const models = await modelFactory.init();
+    const ContactSubmission = models.ContactSubmission;
+    if (!ContactSubmission) return null;
+
+    if (!contactTableReady) {
+      await ContactSubmission.sync().catch(() => null);
+      contactTableReady = true;
+    }
+
+    const name =
+      data.contactPerson ||
+      data.name ||
+      [data.firstName, data.lastName].filter(Boolean).join(" ").trim() ||
+      null;
+
+    const submission = await ContactSubmission.create({
+      formType,
+      email: data.email,
+      name,
+      phone: data.phone || data.mobile || null,
+      company: data.companyName || data.company || null,
+      payload: data,
+      emailStatus
+    });
+    console.log(`✅ Contact submission stored (${formType}) for ${data.email}`);
+    return submission;
+  } catch (dbError) {
+    console.warn("Contact submission DB save warning:", dbError.message);
+    return null;
+  }
+}
 
 // Helper function to generate QR code as buffer
 async function generateQRCodeBuffer(data) {
@@ -267,16 +305,23 @@ router.post("/visitor/checkin", async (req, res) => {
 
 router.post("/", async (req, res) => {
   try {
-    const { formType, captchaToken, submittedAt, ...data } = req.body;
+    const { formType, captchaToken, submittedAt, verificationToken, ...data } = req.body;
 
     if (!formType) {
       return res.status(400).json({ success: false, message: "Form type missing" });
     }
 
+    if (!data.email) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Email address is required" 
+      });
+    }
+
     // Log received data for debugging
     console.log(`📝 Received ${formType} form submission:`, {
       email: data.email,
-      firstName: data.firstName,
+      firstName: data.firstName || data.name,
       formType
     });
 
@@ -284,38 +329,30 @@ router.post("/", async (req, res) => {
     let html = "";
     let visitorCode = null;
     let qrCodeBuffer = null;
+    let issued = null;
 
-    // Generate QR code for visitor and delegate registrations
+    // Issue digital pass and generate QR code for visitor and delegate registrations
     if (formType === "visitor-registration" || formType === "delegate-registration") {
-      // Create a unique visitor code
-      visitorCode = `itstyre-${Date.now()}`;
+      try {
+        issued = await passService.issueContactPass({ formType, data, verificationToken });
+        visitorCode = issued.pass.registrationNumber;
+        data.visitorCode = visitorCode;
+        data.passUrl = issued.pass.passUrl;
+      } catch (passErr) {
+        console.warn("Could not issue digital pass via PassService, falling back:", passErr.message);
+        visitorCode = `indiamet-${Date.now()}`;
+        data.visitorCode = visitorCode;
+      }
 
-      // Create a unique QR code content
-      const qrContent = `IndiaMet 2027 \n${formType === "visitor-registration" ? "Visitor" : "Delegate"}\nName: ${data.firstName || ''} ${data.lastName || ''}\nEmail: ${data.email || ''}\nCode: ${visitorCode}\nDate: 8-10 Oct 2026`;
+      // Create a unique QR code content with correct event info
+      const attendeeName = data.name || data.contactPerson || [data.firstName, data.lastName].filter(Boolean).join(" ").trim() || 'Visitor';
+      const qrContent = `IndiaMET 2027 \n${formType === "visitor-registration" ? "Visitor" : "Delegate"}\nName: ${attendeeName}\nEmail: ${data.email || ''}\nCode: ${visitorCode}\nDate: 13-15 May 2027\nVenue: Auto Cluster Exhibition Centre, Pune`;
 
       // Generate buffer for email attachments
       qrCodeBuffer = await generateQRCodeBuffer(qrContent);
-
-      // Save to database if Visitor model exists
-      try {
-        const Visitor = require("../models/Visitor");
-        await Visitor.create({
-          visitorCode,
-          firstName: data.firstName,
-          lastName: data.lastName,
-          email: data.email,
-          phone: data.mobile || data.phone,
-          address: data.address,
-          company: data.company,
-          designation: data.designation,
-          formType: formType
-        });
-        console.log(`✅ Visitor saved with code: ${visitorCode}`);
-      } catch (dbError) {
-        console.error("Database save error:", dbError);
-        // Continue even if database save fails
-      }
     }
+
+    const submission = await saveContactSubmission(formType, data, "pending");
 
     // Safely access data with fallbacks to prevent undefined errors
     switch (formType) {
@@ -1231,10 +1268,15 @@ router.post("/", async (req, res) => {
       // Don't fail the request if admin notification fails
     }
 
+    if (submission) {
+      await submission.update({ emailStatus: 'sent' }).catch(() => null);
+    }
+
     return res.status(200).json({
       success: true,
       message: "Form submitted successfully. Please check your email for confirmation.",
-      visitorCode: visitorCode || null
+      visitorCode: visitorCode || null,
+      ...(issued ? { pass: issued.pass, delivery: issued.delivery } : {})
     });
 
   } catch (error) {
