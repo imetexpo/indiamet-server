@@ -1,8 +1,8 @@
 const DEFAULT_IMPORTANT_DATES = [
-  { label: 'Setup Begins', dateLabel: '23 Mar 2027', sortOrder: 0 },
-  { label: 'Event Days', dateLabel: '24–26 Mar 2027', sortOrder: 1 },
-  { label: 'Breakdown', dateLabel: '26 Mar 2027', sortOrder: 2 },
-  { label: 'Requirements Due', dateLabel: '25 Sep 2026', sortOrder: 3 }
+  { label: 'Setup Begins', dateLabel: '12 May 2027', sortOrder: 0 },
+  { label: 'Event Days', dateLabel: '13–15 May 2027', sortOrder: 1 },
+  { label: 'Breakdown', dateLabel: '15 May 2027', sortOrder: 2 },
+  { label: 'Requirements Due', dateLabel: '25 Apr 2027', sortOrder: 3 }
 ];
 
 function getModels() {
