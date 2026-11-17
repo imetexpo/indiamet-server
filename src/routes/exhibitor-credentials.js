@@ -19,7 +19,7 @@ router.post("/send-credentials", async (req, res) => {
     console.log(`📧 Sending credentials to: ${email} (${name})`);
 
     // Create a beautiful HTML email for credentials
-    const subject = "🎫 Your DIEMEX Exhibitor Portal Login Credentials";
+    const subject = "🎫 Your IndiaMET 2027 Exhibitor Portal Login Credentials";
     
     const html = `
       <!DOCTYPE html>
@@ -27,7 +27,7 @@ router.post("/send-credentials", async (req, res) => {
       <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Exhibitor Login Credentials - DIEMEX</title>
+        <title>Exhibitor Login Credentials - IndiaMET 2027</title>
         <style>
           @media only screen and (max-width: 600px) {
             .container { width: 100% !important; }
@@ -44,21 +44,21 @@ router.post("/send-credentials", async (req, res) => {
                 
                 <!-- Hero Header with Gradient -->
                 <tr>
-                  <td style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); padding: 48px 40px; text-align: center;">
-                    <h1 style="color: white; margin: 0 0 10px; font-size: 42px; font-weight: 700; letter-spacing: 1px;">DIEMEX</h1>
-                    <p style="color: rgba(255,255,255,0.9); margin: 0; font-size: 18px; font-weight: 300;">International Exhibition 2024</p>
-                    <div style="width: 60px; height: 4px; background: #ffd700; margin: 20px auto 0; border-radius: 2px;"></div>
+                  <td style="background: linear-gradient(135deg, #003A77 0%, #00A1B1 100%); padding: 40px 30px; text-align: center;">
+                    <img src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1793946695/indimet_LOGO_cusfu7.png" style="max-width: 220px; display: block; margin: 0 auto 10px;" alt="IndiaMET 2027 Logo" />
+                    <p style="color: rgba(255,255,255,0.95); margin: 0; font-size: 15px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">International Metrology Exhibition &amp; Summit 2027</p>
+                    <div style="width: 60px; height: 3px; background: #FFD154; margin: 15px auto 0; border-radius: 2px;"></div>
                   </td>
                 </tr>
                 
                 <!-- Welcome Message -->
                 <tr>
                   <td style="padding: 40px 40px 20px;">
-                    <h2 style="color: #1a1a1a; margin: 0 0 10px; font-size: 28px; font-weight: 600;">
+                    <h2 style="color: #003A77; margin: 0 0 10px; font-size: 26px; font-weight: 600;">
                       Welcome, ${name}! 👋
                     </h2>
-                    <p style="color: #4a5568; margin: 0; font-size: 16px; line-height: 1.6;">
-                      Your exhibitor account has been successfully created. Below are your login credentials for the DIEMEX Exhibitor Portal.
+                    <p style="color: #4a5568; margin: 0; font-size: 15px; line-height: 1.6;">
+                      Your exhibitor account has been successfully created. Below are your login credentials for the IndiaMET 2027 Exhibitor Portal.
                     </p>
                   </td>
                 </tr>
@@ -66,7 +66,7 @@ router.post("/send-credentials", async (req, res) => {
                 <!-- Company Info Banner -->
                 <tr>
                   <td style="padding: 0 40px;">
-                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; padding: 24px; color: white;">
+                    <div style="background: linear-gradient(135deg, #003A77 0%, #005691 100%); border-radius: 12px; padding: 24px; color: white;">
                       <table width="100%">
                         <tr>
                           <td style="font-size: 14px; opacity: 0.9; padding-bottom: 8px;">COMPANY</td>
@@ -171,14 +171,14 @@ router.post("/send-credentials", async (req, res) => {
                             Contact our support team for assistance:
                           </p>
                           <p style="margin: 0;">
-                            📧 <a href="mailto:support@diemex.com" style="color: #90cdf4; text-decoration: none;">support@diemex.com</a><br>
-                            📞 <span style="color: #90cdf4;">+1 (555) 123-4567</span>
+                            📧 <a href="mailto:pad@maxxmedia.in" style="color: #00A1B1; text-decoration: none;">pad@maxxmedia.in</a><br>
+                            📞 <span style="color: #00A1B1;">+91 91483 19993</span>
                           </p>
                         </td>
                       </tr>
                       <tr>
                         <td style="padding-top: 20px; border-top: 1px solid #2d3748; color: #718096; font-size: 12px; text-align: center;">
-                          &copy; ${new Date().getFullYear()} DIEMEX Exhibition. All rights reserved.<br>
+                          &copy; ${new Date().getFullYear()} IndiaMET 2027. All rights reserved.<br>
                           This email contains confidential login credentials.
                         </td>
                       </tr>
@@ -253,7 +253,7 @@ router.post("/resend/:exhibitorId", async (req, res) => {
 
     console.log(`📧 Resending credentials for exhibitor ${exhibitorId} to ${email}`);
 
-    const subject = "🔄 Your DIEMEX Exhibitor Portal Credentials (Resent)";
+    const subject = "🔄 Your IndiaMET 2027 Exhibitor Portal Credentials (Resent)";
     
     const html = `
       <!DOCTYPE html>
@@ -268,18 +268,18 @@ router.post("/resend/:exhibitorId", async (req, res) => {
           .field { margin-bottom: 10px; }
           .label { font-weight: bold; color: #1e3c72; }
           .note { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; }
-          .button { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; }
+          .button { background: #003A77; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; }
         </style>
       </head>
       <body>
         <div class="container">
-          <div class="header">
-            <h1>DIEMEX Exhibition</h1>
-            <p>Exhibitor Portal Access</p>
+          <div class="header" style="background:#003A77; text-align:center; padding:25px;">
+            <img src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1793946695/indimet_LOGO_cusfu7.png" style="max-width:200px; display:block; margin:0 auto;" alt="IndiaMET 2027 Logo" />
+            <p style="color:white; margin:8px 0 0; font-size:13px; text-transform:uppercase; letter-spacing:1px;">Exhibitor Portal Access</p>
           </div>
           <div class="content">
             <h2>Hello ${name},</h2>
-            <p>As requested, here are your login credentials for the DIEMEX Exhibitor Portal:</p>
+            <p>As requested, here are your login credentials for the IndiaMET 2027 Exhibitor Portal:</p>
             
             <div class="credentials">
               <div class="field">

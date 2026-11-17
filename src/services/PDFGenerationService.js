@@ -28,7 +28,7 @@ class PDFGenerationService {
           margin: 50,
           info: {
             Title: `Invoice ${invoice.invoiceNumber}`,
-            Author: 'DIEMEX Exhibition',
+            Author: 'IndiaMET 2027 Exhibition',
             Subject: 'Exhibition Invoice',
             Keywords: 'invoice, exhibition, payment'
           }
@@ -77,12 +77,10 @@ class PDFGenerationService {
 
   addHeader(doc, invoice) {
     // Logo placeholder - you can add actual logo later
-    doc.rect(50, 45, 100, 40).fill('#1e3a8a');
+    doc.rect(50, 45, 120, 40).fill('#003A77');
     doc.fillColor('white')
        .fontSize(12)
-       .text('DIEMEX', 55, 55, { align: 'left' })
-       .fontSize(8)
-       .text('Exhibition', 55, 70);
+       .text('IndiaMET 2027', 55, 58, { align: 'left' });
     
     // Title
     doc.fillColor('#1f2937')
@@ -405,7 +403,7 @@ class PDFGenerationService {
       '7. Booth assignment is subject to availability and organizer discretion.',
       '8. Exhibitors must comply with all exhibition rules and regulations.',
       '9. Organizers reserve the right to modify terms with prior notice.',
-      '10. For any queries, contact: accounts@diemex.com'
+      '10. For any queries, contact: accounts@indiametexpo.com'
     ];
     
     let yPos = 80;
@@ -424,7 +422,7 @@ class PDFGenerationService {
       doc.fontSize(8)
          .fillColor('#9ca3af')
          .text(
-           'DIEMEX Exhibition | www.diemex.com | support@diemex.com | +91 1234567890',
+           'IndiaMET 2027 Exhibition | www.indiametexpo.com | pad@maxxmedia.in | +91 91483 19993',
            50,
            doc.page.height - 50,
            { align: 'center', width: doc.page.width - 100 }

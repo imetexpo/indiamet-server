@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * DIEMEX 2027 — Visitor Pass & On-Site Gate Badge Service (PassService.js)
+ * IndiaMET 2027 — Visitor Pass & On-Site Gate Badge Service (PassService.js)
  * ============================================================================
  * 
  * ROLE IN ARCHITECTURE:
@@ -106,7 +106,10 @@ async function recordPassLead(pass, payload = {}) {
                   </td>
                 </tr>
                 <tr>
-                  <td style="background:#0F8F4F; color:#fff; text-align:center; padding:15px; font-size:20px; font-weight:bold;">
+                  <td style="background:#00A1B1; height:6px;"></td>
+                </tr>
+                <tr>
+                  <td style="background:#003A77; color:#fff; text-align:center; padding:15px; font-size:20px; font-weight:bold;">
                     New Visitor Registration (Digital Pass)
                   </td>
                 </tr>
@@ -1247,12 +1250,98 @@ async function sendEmailPass(pass, passUrl) {
   }
 
   const html = `
-    <p>Dear ${pass.name},</p>
-    <p>Your IndiaMET 2027 visitor pass is ready.</p>
-    <p><strong>${pass.registrationNumber}</strong></p>
-    <p>Open this link on your phone and show the QR at the entrance:</p>
-    <p><a href="${passUrl}">${passUrl}</a></p>
-    <p>13–15 May 2027 · Auto Cluster Exhibition Centre, Pune</p>
+    <!DOCTYPE html>
+    <html>
+    <body style="margin:0; padding:0; background:#f4f6fa; font-family:Arial, sans-serif;">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f4f6fa; padding:40px 10px;">
+        <tr>
+          <td align="center">
+            <table width="600" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff; border-radius:12px; overflow:hidden; box-shadow:0 4px 16px rgba(0,58,119,0.08);">
+              <!-- HEADER -->
+              <tr>
+                <td align="center" style="background:#ffffff; padding:30px 20px 20px;">
+                  <img src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1793946695/indimet_LOGO_cusfu7.png" alt="IndiaMET 2027 Logo" style="max-width:220px; height:auto; display:block;" />
+                  <p style="margin:8px 0 0; font-size:13px; color:#003A77; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">
+                    International Metrology Exhibition &amp; Summit
+                  </p>
+                </td>
+              </tr>
+              <!-- TOP BANNER -->
+              <tr>
+                <td style="background:linear-gradient(135deg, #003A77 0%, #00A1B1 100%); padding:20px; text-align:center; color:#ffffff;">
+                  <h2 style="margin:0; font-size:22px; font-weight:bold; letter-spacing:0.5px;">Your Digital Visitor Pass is Ready!</h2>
+                </td>
+              </tr>
+              <!-- CONTENT -->
+              <tr>
+                <td style="padding:35px 30px; color:#333333;">
+                  <p style="font-size:16px; margin:0 0 16px;">Dear <strong>${pass.name}</strong>,</p>
+                  <p style="font-size:15px; line-height:1.6; margin:0 0 24px; color:#4a5568;">
+                    Thank you for registering for <strong>IndiaMET 2027</strong>. Your official digital visitor badge has been issued with QR check-in enabled.
+                  </p>
+                  
+                  <!-- PASS DETAILS CARD -->
+                  <div style="background:#F7F8FC; border:1px solid #E2E8F0; border-radius:10px; padding:20px; margin-bottom:28px;">
+                    <table width="100%" cellpadding="6" cellspacing="0" style="font-size:14px;">
+                      <tr>
+                        <td width="35%" style="color:#64748b; font-weight:bold;">Pass Code:</td>
+                        <td style="color:#003A77; font-weight:bold; font-size:16px; font-family:monospace;">${pass.registrationNumber}</td>
+                      </tr>
+                      <tr>
+                        <td style="color:#64748b; font-weight:bold;">Attendee:</td>
+                        <td style="color:#1e293b; font-weight:600;">${pass.name}</td>
+                      </tr>
+                      ${pass.company ? `<tr><td style="color:#64748b; font-weight:bold;">Company:</td><td style="color:#1e293b;">${pass.company}</td></tr>` : ''}
+                      ${pass.designation ? `<tr><td style="color:#64748b; font-weight:bold;">Designation:</td><td style="color:#1e293b;">${pass.designation}</td></tr>` : ''}
+                      <tr>
+                        <td style="color:#64748b; font-weight:bold;">Dates:</td>
+                        <td style="color:#1e293b;">13–15 May 2027 (10:00 AM – 6:00 PM)</td>
+                      </tr>
+                      <tr>
+                        <td style="color:#64748b; font-weight:bold;">Venue:</td>
+                        <td style="color:#1e293b;">Auto Cluster Exhibition Centre, Pune, India</td>
+                      </tr>
+                    </table>
+                  </div>
+
+                  <!-- CTA BUTTON -->
+                  <div style="text-align:center; margin:30px 0;">
+                    <a href="${passUrl}" style="background:#003A77; color:#ffffff; font-weight:bold; font-size:16px; text-decoration:none; padding:16px 36px; border-radius:30px; display:inline-block; box-shadow:0 4px 12px rgba(0,58,119,0.25);">
+                      View &amp; Download Visitor Badge
+                    </a>
+                    <p style="font-size:12px; color:#64748b; margin-top:12px;">
+                      Show the QR code on your phone at the entry gate for instant direct check-in.
+                    </p>
+                  </div>
+
+                  <p style="font-size:14px; color:#64748b; margin:24px 0 0; line-height:1.5;">
+                    We look forward to welcoming you to India's premier precision measurement and industrial metrology exhibition.
+                  </p>
+
+                  <p style="font-size:14px; color:#1e293b; margin:24px 0 0;">
+                    Best regards,<br/>
+                    <strong style="color:#003A77;">IndiaMET 2027 Team</strong>
+                  </p>
+                </td>
+              </tr>
+              <!-- FOOTER -->
+              <tr>
+                <td style="background:#003A77; color:#ffffff; padding:18px 20px; text-align:center; font-size:13px;">
+                  <strong>IndiaMET 2027</strong> &bull; 13–15 May 2027 &bull; Auto Cluster Exhibition Centre, Pune, India
+                </td>
+              </tr>
+              <tr>
+                <td style="background:#E6EEF7; padding:16px 20px; font-size:12px; color:#475569; text-align:center;">
+                  Organizer: <strong style="color:#003A77;">Maxx Business Media Pvt. Ltd.</strong><br/>
+                  Bengaluru, India | pad@maxxmedia.in | <a href="https://www.indiametexpo.com" style="color:#003A77; text-decoration:none;">www.indiametexpo.com</a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>
   `;
   const result = await emailService.sendEmail(to, 'Your IndiaMET 2027 Visitor Pass', html);
   if (result?.success) {

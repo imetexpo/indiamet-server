@@ -705,10 +705,10 @@ router.get('/layout', async (req, res) => {
 
     // Fallback event data if not found
     const eventData = event || {
-      name: 'DIEMEX 2026',
-      venue: 'Auto Cluster Exhibition Center',
-      exhibitionDay: '8th October, 2026',
-      dismantleDay: '10th October, 2026'
+      name: 'IndiaMET 2027',
+      venue: 'Auto Cluster Exhibition Center, Pune',
+      exhibitionDay: '13th May, 2027',
+      dismantleDay: '15th May, 2027'
     };
 
     // Response
