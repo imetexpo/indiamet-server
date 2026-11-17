@@ -24,6 +24,126 @@ const messaging = require('./PassMessagingService');
 const emailService = require('./EmailService');
 const cloudinaryService = require('./CloudinaryService');
 const { uploadBadgeImageToCloudinary } = require('../utils/badgeRenderer');
+const cmsLeadService = require('./CmsLeadService');
+
+/**
+ * Persists the registered visitor as a lead in MySQL (contact_submissions),
+ * triggers the inward admin email alert, and syncs the record to the central CMS.
+ */
+async function recordPassLead(pass, payload = {}) {
+  try {
+    const models = await modelFactory.init();
+    const ContactSubmission = models.ContactSubmission;
+    if (ContactSubmission) {
+      await ContactSubmission.sync().catch(() => null);
+      const leadEmail =
+        pass.email ||
+        `${String(pass.registrationNumber || 'visitor').toLowerCase().replace(/[^a-z0-9]/g, '')}@visitor.indiametexpo.com`;
+      await ContactSubmission.create({
+        formType: 'visitor-registration',
+        email: leadEmail,
+        name: pass.name,
+        phone: pass.phone,
+        company: pass.company,
+        payload: {
+          ...payload,
+          visitorCode: pass.registrationNumber,
+          publicCode: pass.publicCode,
+          name: pass.name,
+          company: pass.company,
+          designation: pass.designation,
+          phone: pass.phone,
+          email: pass.email,
+          city: pass.city,
+          state: pass.state,
+          country: pass.country,
+          pinCode: pass.pinCode,
+          interests: pass.interests,
+          source: pass.source || 'visitor-pass',
+          passUrl: `${(process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/+$/, '')}/passes/view/${encodeURIComponent(pass.publicCode)}`
+        },
+        emailStatus: 'sent'
+      }).catch((err) => console.warn('[PassService] Could not save ContactSubmission:', err.message));
+    }
+  } catch (err) {
+    console.warn('[PassService] recordPassLead DB error:', err.message);
+  }
+
+  // Admin Notification Email
+  try {
+    const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL || 'pad9742@gmail.com';
+    const fields = [
+      ['Registration Number', pass.registrationNumber],
+      ['Full Name', pass.name],
+      ['Company', pass.company || 'N/A'],
+      ['Designation', pass.designation || 'N/A'],
+      ['Phone', pass.phone || 'N/A'],
+      ['Email', pass.email || 'N/A'],
+      ['City', pass.city || 'N/A'],
+      ['State', pass.state || 'N/A'],
+      ['Pincode', pass.pinCode || 'N/A'],
+      ['Country', pass.country || 'India'],
+      ['Interests', Array.isArray(pass.interests) ? pass.interests.join(', ') : pass.interests || 'N/A'],
+      ['Source', pass.source || 'Website Pass Registration'],
+    ].map(([label, value]) => `
+      <tr>
+        <td width="40%" style="padding:6px 0;"><strong>${label}</strong></td>
+        <td style="padding:6px 0;">: ${value}</td>
+      </tr>
+    `).join('');
+
+    const adminHtml = `
+      <!DOCTYPE html>
+      <html>
+      <body style="margin:0; padding:0; background:#f2f2f2; font-family:Arial, sans-serif;">
+        <table width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+            <td align="center" style="padding:40px 0;">
+              <table width="600" cellpadding="0" cellspacing="0" style="background:#FFFFFF; border-radius:6px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.1);">
+                <tr>
+                  <td style="background:#FFFFFF; padding:30px; text-align:center;">
+                    <img src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1793946695/indimet_LOGO_cusfu7.png" style="max-width:200px; display:block; margin:0 auto;" alt="IndiaMet Logo" />
+                  </td>
+                </tr>
+                <tr>
+                  <td style="background:#0F8F4F; color:#fff; text-align:center; padding:15px; font-size:20px; font-weight:bold;">
+                    New Visitor Registration (Digital Pass)
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:30px;">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="font-size:14px; color:#333;">
+                      ${fields}
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="background:#003A77; padding:15px; color:#fff; font-size:12px; text-align:center;">
+                    IndiaMET 2027 · 13–15 May 2027 · Auto Cluster Exhibition Centre, Pune
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
+    `;
+
+    emailService.sendEmail(adminEmail, `New Visitor Pass Registration - ${pass.name} (${pass.company || 'IndiaMET 2027'})`, adminHtml).catch((err) => {
+      console.warn('[PassService] Admin email notification failed:', err.message);
+    });
+  } catch (err) {
+    console.warn('[PassService] Admin notification error:', err.message);
+  }
+
+  // Sync to Central CMS
+  try {
+    await cmsLeadService.syncPass(pass);
+  } catch (err) {
+    console.warn('[PassService] CMS sync error:', err.message);
+  }
+}
 
 // ============================================================================
 // CONFIGURATION CONSTANTS & TIMEOUTS
@@ -706,6 +826,10 @@ async function completeRegistration({ verificationToken, payload }) {
 
   // Deliver pass link to attendee's device
   const delivery = await deliverPass(pass, session.channel);
+
+  // Sync lead to CMS, save to ContactSubmission, and notify admin
+  await recordPassLead(pass, payload).catch((err) => console.warn('[PassService] Lead recording failed:', err.message));
+
   return {
     success: true,
     message: 'Registration completed',
@@ -926,9 +1050,12 @@ async function createContactPassRecord(code, data, formType) {
     issuedAt: new Date(), verifiedAt: null
   };
   defaults.qrPayload = buildQrPayload(defaults);
-  const [pass] = await VisitorPass.findOrCreate({
+  const [pass, created] = await VisitorPass.findOrCreate({
     where: { registrationNumber: code }, defaults
   });
+  if (created) {
+    await recordPassLead(pass, data).catch((err) => console.warn('[PassService] Lead recording failed:', err.message));
+  }
   return pass;
 }
 

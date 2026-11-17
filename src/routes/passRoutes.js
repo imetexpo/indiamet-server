@@ -225,6 +225,7 @@ router.get('/admin/registrations', ...scannerAccess, async (req, res) => {
 
     const registrations = rows.map((row) => {
       const plain = row.toJSON();
+      const isSynced = Boolean(row.cmsSyncedAt || row.cmsLeadId);
       return {
         ...plain,
         interests: Array.isArray(row.interests) ? row.interests : [],
@@ -232,11 +233,11 @@ router.get('/admin/registrations', ...scannerAccess, async (req, res) => {
         badgeUrl: `${backend}/api/passes/${encodeURIComponent(row.publicCode)}/badge?design=${activeDesign}`,
         badgeDesign: activeDesign,
         cmsSync: {
-          status: 'not_queued',
-          leadId: null,
-          syncedAt: null,
-          attempts: 0,
-          lastError: null,
+          status: isSynced ? 'synced' : (row.cmsStatus || 'not_queued'),
+          leadId: row.cmsLeadId || null,
+          syncedAt: row.cmsSyncedAt ? row.cmsSyncedAt.toISOString() : null,
+          attempts: isSynced ? 1 : (row.cmsStatus === 'error' ? 1 : 0),
+          lastError: row.cmsError || null,
           nextAttemptAt: null,
         },
       };
@@ -249,7 +250,7 @@ router.get('/admin/registrations', ...scannerAccess, async (req, res) => {
       page,
       limit,
       totalPages: Math.max(1, Math.ceil(count / limit)),
-      cmsConfigured: false,
+      cmsConfigured: true,
     });
   } catch (error) {
     handleError(res, error);
