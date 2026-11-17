@@ -1,7 +1,7 @@
 {
-  "name": "tyreexpo-backend",
+  "name": "indiamet-backend",
   "version": "1.0.0",
-  "description": "Backend for Exhibition Admin Dashboard with MySQL, MongoDB, and Kafka",
+  "description": "Backend for IndiaMet 2027 - India's Dedicated Industrial Metrology Exhibition And Summit",
   "keywords": [
     "exhibition",
     "admin",
@@ -13,13 +13,13 @@
     "kafka",
     "redis"
   ],
-  "homepage": "https://github.com/biztradefairs/diemex-backend#readme",
+  "homepage": "https://www.indiametexpo.com",
   "bugs": {
-    "url": "https://github.com/biztradefairs/diemex-backend/issues"
+    "url": "https://github.com/biztradefairs/indiamet-backend/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/biztradefairs/diemex-backend.git"
+    "url": "git+https://github.com/biztradefairs/indiamet-backend.git"
   },
   "license": "MIT",
   "author": "Your Name",

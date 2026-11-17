@@ -1542,17 +1542,17 @@ router.get('/manual', async (req, res) => {
           {
             id: '1',
             title: 'Event Overview',
-            content: 'Welcome to the exhibition. The event will take place from January 29-31, 2024 at the Convention Center.'
+            content: "Welcome to IndiaMet 2027 - India's Dedicated Industrial Metrology Exhibition And Summit. The event will take place from 13–15 May 2027 at Auto Cluster Exhibition Centre, Pune, India."
           },
           {
             id: '2',
             title: 'Setup Schedule',
-            content: 'Setup begins on January 28 from 8:00 AM to 6:00 PM. All exhibitors must complete setup by 6:00 PM.'
+            content: 'Setup begins on 12 May 2027 from 8:00 AM to 8:00 PM. All exhibitors must complete booth setup and machine placement by 8:00 PM.'
           },
           {
             id: '3',
             title: 'Event Hours',
-            content: 'Exhibition hours: 9:00 AM - 6:00 PM daily. Networking events: 7:00 PM - 10:00 PM.'
+            content: 'Exhibition & Summit hours: 10:00 AM - 6:00 PM daily (13–15 May 2027).'
           }
         ]
       }
