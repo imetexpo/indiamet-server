@@ -189,28 +189,94 @@ async function generateQRCodeBuffer(data) {
   }
 }
 
+function renderDetailsCard(data = {}) {
+  const name = [data.firstName, data.lastName].filter(Boolean).join(" ").trim() || data.name || data.contactPerson || "Not provided";
+  const company = data.companyName || data.company || "Not provided";
+  const jobTitle = data.jobTitle || data.designation || "Not provided";
+  const phone = data.phone || data.mobile || "Not provided";
+  const email = data.email || "Not provided";
+  const address = [data.address, data.city, data.state, data.country, data.pincode].filter(Boolean).join(", ") || data.address || data.city || "Not provided";
+
+  return `
+    <table width="100%" cellpadding="8" cellspacing="0" 
+      style="background:#E8F1F8; margin:20px 0; border:1px solid #CBD5E1; border-radius:6px; border-collapse:collapse; font-size:14px; text-align:left;">
+      <tr>
+        <td width="35%" style="border-bottom:1px solid #CBD5E1; color:#003A77; padding:8px 12px;"><strong>Name</strong></td>
+        <td style="border-bottom:1px solid #CBD5E1; font-weight:600; color:#1e293b; padding:8px 12px;">: ${name}</td>
+      </tr>
+      <tr>
+        <td style="border-bottom:1px solid #CBD5E1; color:#003A77; padding:8px 12px;"><strong>Company</strong></td>
+        <td style="border-bottom:1px solid #CBD5E1; color:#1e293b; padding:8px 12px;">: ${company}</td>
+      </tr>
+      <tr>
+        <td style="border-bottom:1px solid #CBD5E1; color:#003A77; padding:8px 12px;"><strong>Job Title</strong></td>
+        <td style="border-bottom:1px solid #CBD5E1; color:#1e293b; padding:8px 12px;">: ${jobTitle}</td>
+      </tr>
+      <tr>
+        <td style="border-bottom:1px solid #CBD5E1; color:#003A77; padding:8px 12px;"><strong>Phone Number</strong></td>
+        <td style="border-bottom:1px solid #CBD5E1; color:#1e293b; padding:8px 12px;">: ${phone}</td>
+      </tr>
+      <tr>
+        <td style="border-bottom:1px solid #CBD5E1; color:#003A77; padding:8px 12px;"><strong>Email</strong></td>
+        <td style="border-bottom:1px solid #CBD5E1; color:#1e293b; padding:8px 12px;">: ${email}</td>
+      </tr>
+      <tr>
+        <td style="color:#003A77; padding:8px 12px;"><strong>Address</strong></td>
+        <td style="color:#1e293b; padding:8px 12px;">: ${address}</td>
+      </tr>
+    </table>
+  `;
+}
+
 function generateInwardTemplate({
   title,
   lightBg = "#FFFFFF",
   stripColor = "#003A77",
-  titleColor,
-  data,
+  titleColor = "#003A77",
+  data = {},
   includeSpace = false
 }) {
+  const name = [data.firstName, data.lastName].filter(Boolean).join(" ").trim() || data.name || data.contactPerson || "Not provided";
+  const company = data.companyName || data.company || "Not provided";
+  const jobTitle = data.jobTitle || data.designation || "Not provided";
+  const phone = data.phone || data.mobile || "Not provided";
+  const email = data.email || "Not provided";
+  const address = [data.address, data.city, data.state, data.country, data.pincode].filter(Boolean).join(", ") || data.address || data.city || "Not provided";
 
-  // 🔥 Generate dynamic fields - FIXED: Removed "None" concatenation
-  const fields = Object.entries(data)
-    .filter(([key]) => !['captchaToken', 'submittedAt'].includes(key))
+  const standardFields = [
+    ["Name", name],
+    ["Company", company],
+    ["Job Title", jobTitle],
+    ["Phone Number", phone],
+    ["Email", email],
+    ["Address", address]
+  ];
+
+  const ignoredKeys = new Set([
+    'firstName', 'lastName', 'name', 'contactPerson',
+    'companyName', 'company',
+    'jobTitle', 'designation',
+    'phone', 'mobile',
+    'email',
+    'address', 'city', 'state', 'country', 'pincode', 'postalCode',
+    'captchaToken', 'submittedAt', 'standSize', 'spaceRequirement', 'interestLevel'
+  ]);
+
+  const extraFields = Object.entries(data)
+    .filter(([key]) => !ignoredKeys.has(key))
     .map(([key, value]) => {
-      if (Array.isArray(value)) value = value.join(", ");
-      return `
-        <tr>
-            <td width="40%" style="padding:6px 0;"><strong>${key}</strong>${''}</td>
-            <td style="padding:6px 0;">: ${value || "N/A"}${''}</td>
-        </tr>
-      `;
-    })
-    .join("");
+      const formattedVal = Array.isArray(value) ? value.join(", ") : (value || "N/A");
+      return [key, formattedVal];
+    });
+
+  const allRows = [...standardFields, ...extraFields];
+
+  const fields = allRows.map(([label, value]) => `
+    <tr>
+      <td width="35%" style="padding:7px 0; border-bottom:1px solid #E2E8F0; color:#003A77;"><strong>${label}</strong></td>
+      <td style="padding:7px 0; border-bottom:1px solid #E2E8F0; color:#1e293b;">: ${value}</td>
+    </tr>
+  `).join("");
 
   return `
   <!DOCTYPE html>
@@ -219,17 +285,17 @@ function generateInwardTemplate({
     
     <table width="100%" cellpadding="0" cellspacing="0">
       <tr>
-        <td align="center" style="padding:40px 0;">
+        <td align="center" style="padding:20px 0;">
           <!-- CARD -->
           <table width="600" cellpadding="0" cellspacing="0"
             style="background:#FFFFFF; border-radius:6px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.1);">
 
-            <!-- HEADER -->
+            <!-- HEADER (REDUCED PADDING) -->
             <tr>
-              <td style="background:#FFFFFF; padding:40px 30px; text-align:center;">
+              <td style="background:#FFFFFF; padding:20px 24px; text-align:center;">
                 <img 
                   src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1793946695/indimet_LOGO_cusfu7.png"
-                  style="max-width:220px; display:block; margin:0 auto;"
+                  style="max-width:180px; display:block; margin:0 auto;"
                   alt="IndiaMet Logo"
                 />
                </td>
@@ -237,19 +303,19 @@ function generateInwardTemplate({
 
             <!-- STRIP -->
             <tr>
-              <td style="background:${stripColor}; height:30px;"></td>
+              <td style="background:${stripColor}; height:6px;"></td>
              </tr>
 
             <!-- TITLE -->
             <tr>
-              <td style="background:${titleColor}; color:#fff; text-align:center; padding:15px; font-size:20px; font-weight:bold;">
+              <td style="background:${titleColor}; color:#fff; text-align:center; padding:12px; font-size:18px; font-weight:bold;">
                 ${title}
                </td>
              </tr>
 
             <!-- CONTENT -->
             <tr>
-              <td style="padding:30px;">
+              <td style="padding:24px 30px;">
                 <table width="100%" cellpadding="0" cellspacing="0" style="font-size:14px; color:#333;">
                   ${fields}
                  </table>
@@ -279,15 +345,15 @@ function generateInwardTemplate({
                       Bengaluru, India
                      </td>
 
-                   </tr>
-                 </table>
-               </td>
-             </tr>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
 
-           </table>
-         </td>
-       </tr>
-     </table>
+            </table>
+          </td>
+        </tr>
+      </table>
 
   </body>
   </html>
@@ -530,8 +596,8 @@ router.post("/", async (req, res) => {
 
     // Safely access data with fallbacks to prevent undefined errors
     switch (formType) {
-      case "event-brochure":
-        subject = "Your Event Brochure - IndiaMet 2027 ";
+            case "event-brochure":
+        subject = "Your Event Brochure - IndiaMET 2027";
         html = `
           <!DOCTYPE html>
           <html>
@@ -539,70 +605,72 @@ router.post("/", async (req, res) => {
 
             <table width="100%" cellpadding="0" cellspacing="0" border="0">
 
-              <!-- TOP COLOR BACKGROUND -->
-                <tr>
-                <td align="center" style="background:#FCD5A6; padding:40px 0 0;">
+              <!-- TOP COLOR BACKGROUND (REDUCED) -->
+              <tr>
+                <td align="center" style="background:#D7EEFB; padding:20px 0 0;">
 
-                  <!-- BLUE HEADER (INSIDE COLOR AREA) -->
+                  <!-- BLUE HEADER (REDUCED PADDING) -->
                   <table width="600" cellpadding="0" cellspacing="0" border="0"
-                    style="background:#FFFFFF; border-radius:6px 6px 0 0; color:#fff;">
+                    style="background:#003A77; border-radius:6px 6px 0 0; color:#fff;">
                     
-                      <tr>
-                      <td align="center" style="padding:30px;">
+                    <tr>
+                      <td align="center" style="padding:20px 24px;">
                         <img 
-                  src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1793946695/indimet_LOGO_cusfu7.png"
-                  style="max-width:220px; display:block; margin:0 auto;"
-                  alt="IndiaMet Logo"
-                />
-                        <p style="margin:5px 0 0; font-size:14px;">
-                          IndiaMet 2027 - India's Dedicated Industrial Metrology Exhibition And Summit 
+                          src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1793946695/indimet_LOGO_cusfu7.png"
+                          style="max-width:180px; display:block; margin:0 auto;"
+                          alt="IndiaMET 2027 Logo"
+                        />
+                        <p style="margin:6px 0 0; font-size:13px; color:#ffffff; font-weight:600;">
+                          India's Dedicated Industrial Metrology Exhibition And Summit
                         </p>
-                         </td>
-                       </tr>
+                      </td>
+                    </tr>
 
-                     </table>
+                  </table>
 
-                   </td>
-                 </tr>
+                </td>
+              </tr>
 
               <!-- WHITE CARD BODY -->
-                <tr>
+              <tr>
                 <td align="center">
 
                   <table width="600" cellpadding="0" cellspacing="0" border="0"
                     style="background:#ffffff; border-radius:0 0 6px 6px;">
 
                     <!-- CONTENT -->
-                      <tr>
-                      <td style="padding:40px 30px; color:#333; text-align:center;">
+                    <tr>
+                      <td style="padding:30px; color:#333; text-align:center;">
 
                         <p style="text-align:left; font-size:16px;">
-                          Dear ${data.firstName || 'Valued Customer'},
+                          Dear ${[data.firstName, data.lastName].filter(Boolean).join(" ").trim() || data.name || data.contactPerson || 'Valued Customer'},
                         </p>
 
                         <p style="text-align:left; font-size:16px;">
-                          Thank you for requesting <strong>IndiaMet 2027 </strong> Brochure.
+                          Thank you for requesting the <strong>IndiaMET 2027</strong> Event Brochure. Below are your submitted details:
                         </p>
+
+                        ${renderDetailsCard(data)}
 
                         <!-- IMAGE -->
-                        <div style="margin:30px 0;">
+                        <div style="margin:25px 0;">
                           <img 
                             src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1793946695/indimet_LOGO_cusfu7.png" 
-                            alt="IndiaMet 2027 Brochure"
-                            style="width:100%; max-width:450px; border-radius:6px;"
+                            alt="IndiaMET 2027 Brochure"
+                            style="width:100%; max-width:400px; border-radius:6px;"
                           />
                         </div>
 
                         <!-- BUTTON -->
-                        <div style="margin:30px 0;">
+                        <div style="margin:25px 0;">
                           <a href="https://res.cloudinary.com/deo4vpw8f/image/upload/v1793947874/IndiaMet_Brochure_compressed_ex2v66.pdf"
                              style="
-                               background:#0F2F5C;
+                               background:#003A77;
                                color:#ffffff;
-                               padding:15px 35px;
+                               padding:14px 32px;
                                text-decoration:none;
                                border-radius:30px;
-                               font-size:16px;
+                               font-size:15px;
                                display:inline-block;
                                font-weight:bold;
                              ">
@@ -613,43 +681,43 @@ router.post("/", async (req, res) => {
                           </p>
                         </div>
 
-                        <p style="font-size:15px;">
+                        <p style="font-size:14px; color:#666;">
                           If you have any questions, feel free to contact us.
                         </p>
 
                         <p style="text-align:left; margin-top:20px;">
                           Best regards,<br/>
-                          <strong>IndiaMet 2027 Team</strong>
+                          <strong>IndiaMET 2027 Team</strong>
                         </p>
 
-                         </td>
-                       </tr>
+                      </td>
+                    </tr>
 
                     <!-- FOOTER -->
-                      <tr>
+                    <tr>
                       <td style="background:#003A77; color:#fff; padding:15px; text-align:center; font-size:14px;">
-                        <strong>13-15 May 2027 </strong> • Auto Cluster Exhibition Centre, Pune, India
-                         </td>
-                       </tr>
+                        <strong>13-15 May 2027</strong> • Auto Cluster Exhibition Centre, Pune, India
+                      </td>
+                    </tr>
 
-                      <tr>
+                    <tr>
                       <td style="background:#E6EEF7; padding:20px; font-size:12px; color:#333; text-align:center;">
                         Organizer: <img 
-                  src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774687173/maxxlogo_lulkwh.png"
-                  style="max-width:220px; display:block; margin:0 auto;"
-                  alt="maX Business Media Logo"
-                /><br/>
+                          src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774687173/maxxlogo_lulkwh.png"
+                          style="max-width:180px; display:block; margin:0 auto;"
+                          alt="Maxx Business Media Logo"
+                        /><br/>
                         T9, Swastik Manandi Arcade, Bengaluru, India<br/>
-                        Tel: +91  91483 19993 | pad@maxxmedia.in | wwwindiametexpo.com
-                         </td>
-                       </tr>
+                        Tel: +91 91483 19993 | pad@maxxmedia.in | www.indiametexpo.com
+                      </td>
+                    </tr>
 
-                     </table>
+                  </table>
 
-                   </td>
-                 </tr>
+                </td>
+              </tr>
 
-               </table>
+            </table>
 
           </body>
           </html>
@@ -657,7 +725,7 @@ router.post("/", async (req, res) => {
         break;
 
       case "post-show-report":
-        subject = "Your Post Show Report - IndiaMet 2027";
+        subject = "Your Post Show Report - IndiaMET 2027";
         html = `
           <!DOCTYPE html>
           <html>
@@ -665,70 +733,72 @@ router.post("/", async (req, res) => {
 
             <table width="100%" cellpadding="0" cellspacing="0" border="0">
 
-              <!-- TOP COLOR BACKGROUND -->
-                <tr>
-                <td align="center" style="background:#ECF0C6; padding:40px 0 0;">
+              <!-- TOP COLOR BACKGROUND (REDUCED) -->
+              <tr>
+                <td align="center" style="background:#D7EEFB; padding:20px 0 0;">
 
-                  <!-- BLUE HEADER (INSIDE COLOR AREA) -->
+                  <!-- BLUE HEADER (REDUCED PADDING) -->
                   <table width="600" cellpadding="0" cellspacing="0" border="0"
-                    style="background:#FFFFFF; border-radius:6px 6px 0 0; color:#fff;">
+                    style="background:#003A77; border-radius:6px 6px 0 0; color:#fff;">
                     
-                      <tr>
-                      <td align="center" style="padding:30px;">
+                    <tr>
+                      <td align="center" style="padding:20px 24px;">
                         <img 
-                  src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1793946695/indimet_LOGO_cusfu7.png"
-                  style="max-width:220px; display:block; margin:0 auto;"
-                  alt="IndiaMet 2027 Logo"
-                />
-                        <p style="margin:5px 0 0; font-size:14px;">
-                          IndiaMet 2027 - India's Dedicated Industrial Metrology Exhibition And Summit 
+                          src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1793946695/indimet_LOGO_cusfu7.png"
+                          style="max-width:180px; display:block; margin:0 auto;"
+                          alt="IndiaMET 2027 Logo"
+                        />
+                        <p style="margin:6px 0 0; font-size:13px; color:#ffffff; font-weight:600;">
+                          India's Dedicated Industrial Metrology Exhibition And Summit
                         </p>
-                         </td>
-                       </tr>
+                      </td>
+                    </tr>
 
-                     </table>
+                  </table>
 
-                   </td>
-                 </tr>
+                </td>
+              </tr>
 
               <!-- WHITE CARD BODY -->
-                <tr>
+              <tr>
                 <td align="center">
 
                   <table width="600" cellpadding="0" cellspacing="0" border="0"
                     style="background:#ffffff; border-radius:0 0 6px 6px;">
 
                     <!-- CONTENT -->
-                      <tr>
-                      <td style="padding:40px 30px; color:#333; text-align:center;">
+                    <tr>
+                      <td style="padding:30px; color:#333; text-align:center;">
 
                         <p style="text-align:left; font-size:16px;">
-                          Dear ${data.firstName || 'Valued Customer'},
+                          Dear ${[data.firstName, data.lastName].filter(Boolean).join(" ").trim() || data.name || data.contactPerson || 'Valued Customer'},
                         </p>
 
                         <p style="text-align:left; font-size:16px;">
-                          Thank you for requesting <strong>IndiaMet 2027</strong> Post Show Report.
+                          Thank you for requesting the <strong>IndiaMET 2027</strong> Post Show Report. Below are your submitted details:
                         </p>
+
+                        ${renderDetailsCard(data)}
 
                         <!-- IMAGE -->
-                        <div style="margin:30px 0;">
+                        <div style="margin:25px 0;">
                           <img 
                             src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1793946695/indimet_LOGO_cusfu7.png" 
                             alt="Post Show Report"
-                            style="width:100%; max-width:450px; border-radius:6px;"
+                            style="width:100%; max-width:400px; border-radius:6px;"
                           />
                         </div>
 
                         <!-- BUTTON -->
-                        <div style="margin:30px 0;">
+                        <div style="margin:25px 0;">
                           <a href="https://drive.google.com/your-post-show-report-link"
                              style="
-                               background:#0F2F5C;
+                               background:#003A77;
                                color:#ffffff;
-                               padding:15px 35px;
+                               padding:14px 32px;
                                text-decoration:none;
                                border-radius:30px;
-                               font-size:16px;
+                               font-size:15px;
                                display:inline-block;
                                font-weight:bold;
                              ">
@@ -739,43 +809,43 @@ router.post("/", async (req, res) => {
                           </p>
                         </div>
 
-                        <p style="font-size:15px;">
+                        <p style="font-size:14px; color:#666;">
                           If you have any questions, feel free to contact us.
                         </p>
 
                         <p style="text-align:left; margin-top:20px;">
                           Best regards,<br/>
-                          <strong>IndiaMet 2027 Team</strong>
+                          <strong>IndiaMET 2027 Team</strong>
                         </p>
 
-                         </td>
-                       </tr>
+                      </td>
+                    </tr>
 
                     <!-- FOOTER -->
-                      <tr>
+                    <tr>
                       <td style="background:#003A77; color:#fff; padding:15px; text-align:center; font-size:14px;">
-                        <strong>8-10 Oct 2026</strong> • Auto Cluster Exhibition Centre, Pune, India
-                         </td>
-                       </tr>
+                        <strong>13-15 May 2027</strong> • Auto Cluster Exhibition Centre, Pune, India
+                      </td>
+                    </tr>
 
-                      <tr>
+                    <tr>
                       <td style="background:#E6EEF7; padding:20px; font-size:12px; color:#333; text-align:center;">
                         Organizer: <img 
-                  src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774687173/maxxlogo_lulkwh.png"
-                  style="max-width:220px; display:block; margin:0 auto;"
-                  alt="maX Business Media Logo"
-                /><br/>
+                          src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774687173/maxxlogo_lulkwh.png"
+                          style="max-width:180px; display:block; margin:0 auto;"
+                          alt="Maxx Business Media Logo"
+                        /><br/>
                         T9, Swastik Manandi Arcade, Bengaluru, India<br/>
-                        Tel: +91  91483 19993 | pad@maxxmedia.in | www.indiametexpo.com
-                         </td>
-                       </tr>
+                        Tel: +91 91483 19993 | pad@maxxmedia.in | www.indiametexpo.com
+                      </td>
+                    </tr>
 
-                     </table>
+                  </table>
 
-                   </td>
-                 </tr>
+                </td>
+              </tr>
 
-               </table>
+            </table>
 
           </body>
           </html>
@@ -783,7 +853,7 @@ router.post("/", async (req, res) => {
         break;
 
       case "visitor-registration":
-        subject = "Visitor Registration Confirmed - IndiaMet 2027";
+        subject = "Visitor Registration Confirmed - IndiaMET 2027";
         html = `
           <!DOCTYPE html>
           <html>
@@ -791,60 +861,62 @@ router.post("/", async (req, res) => {
 
             <table width="100%" cellpadding="0" cellspacing="0" border="0">
 
-              <!-- TOP COLOR BACKGROUND -->
-                <tr>
-                <td align="center" style="background:#D7EEFB; padding:40px 0 0;">
+              <!-- TOP COLOR BACKGROUND (REDUCED) -->
+              <tr>
+                <td align="center" style="background:#D7EEFB; padding:20px 0 0;">
 
-                  <!-- BLUE HEADER (INSIDE COLOR AREA) -->
+                  <!-- BLUE HEADER (REDUCED PADDING) -->
                   <table width="600" cellpadding="0" cellspacing="0" border="0"
                     style="background:#003A77; border-radius:6px 6px 0 0; color:#fff;">
                     
-                      <tr>
-                      <td align="center" style="padding:30px;">
+                    <tr>
+                      <td align="center" style="padding:20px 24px;">
                         <img 
-                  src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1793946695/indimet_LOGO_cusfu7.png"
-                  style="max-width:220px; display:block; margin:0 auto;"
-                  alt="IndiaMet 2027 Logo"
-                />
-                        <p style="margin:5px 0 0; font-size:14px; color:#ffffff;">
-                         IndiaMet 2027 - India's Dedicated Industrial Metrology Exhibition And Summit
+                          src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1793946695/indimet_LOGO_cusfu7.png"
+                          style="max-width:180px; display:block; margin:0 auto;"
+                          alt="IndiaMET 2027 Logo"
+                        />
+                        <p style="margin:6px 0 0; font-size:13px; color:#ffffff; font-weight:600;">
+                          India's Dedicated Industrial Metrology Exhibition And Summit
                         </p>
-                         </td>
-                       </tr>
+                      </td>
+                    </tr>
 
-                     </table>
+                  </table>
 
-                   </td>
-                 </tr>
+                </td>
+              </tr>
 
               <!-- WHITE CARD BODY -->
-                <tr>
+              <tr>
                 <td align="center">
 
                   <table width="600" cellpadding="0" cellspacing="0" border="0"
                     style="background:#ffffff; border-radius:0 0 6px 6px;">
 
                     <!-- CONTENT -->
-                      <tr>
-                      <td style="padding:40px 30px; color:#333; text-align:center;">
+                    <tr>
+                      <td style="padding:30px; color:#333; text-align:center;">
 
-                        <h2 style="margin-bottom:10px;">Visitor Registration Confirmed !</h2>
+                        <h2 style="margin-bottom:10px; color:#003A77;">Visitor Registration Confirmed!</h2>
                         <hr style="border:none; border-top:1px solid #ddd; width:80%; margin:10px auto 20px;" />
 
                         <p style="text-align:left; font-size:16px;">
-                          Dear ${data.firstName || data.name || data.contactPerson || 'Valued Visitor'},
+                          Dear ${[data.firstName, data.lastName].filter(Boolean).join(" ").trim() || data.name || data.contactPerson || 'Valued Visitor'},
                         </p>
 
                         <p style="text-align:left; font-size:16px;">
-                          Thank you for registering to attend <strong>IndiaMet 2027</strong>.<br/>
-                          Below are your registration details and visitor badge.
+                          Thank you for registering to attend <strong>IndiaMET 2027</strong>.<br/>
+                          Below are your registration details and visitor badge:
                         </p>
 
+                        ${renderDetailsCard(data)}
+
                         <!-- QR CODE BADGE -->
-                        <div style="margin:30px 0; text-align:center;">
-                          <div style="background:#fff; padding:20px; border-radius:12px; display:inline-block; box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+                        <div style="margin:25px 0; text-align:center;">
+                          <div style="background:#fff; padding:20px; border-radius:12px; display:inline-block; box-shadow:0 2px 8px rgba(0,0,0,0.1); border:1px solid #CBD5E1;">
                             <img src="cid:qrcode_${visitorCode}" alt="Visitor QR Code" width="200" height="200" style="width:200px; height:200px; display:block; margin:0 auto;" />
-                            <p style="margin-top:15px; font-size:14px; font-weight:bold; color:#003A77;">IndiaMet 2027 Visitor Pass</p>
+                            <p style="margin-top:15px; font-size:14px; font-weight:bold; color:#003A77;">IndiaMET 2027 Visitor Pass</p>
                             <p style="margin:5px 0; font-size:12px; color:#666;">${[data.firstName, data.lastName].filter(Boolean).join(" ").trim() || data.name || data.contactPerson || ''}</p>
                             <p style="margin:5px 0; font-size:12px; color:#666; font-weight:bold;">Code: ${visitorCode}</p>
                             <p style="margin:8px 0 0; font-size:12px; color:#003A77;">Scan this code to view the visitor details.</p>
@@ -852,15 +924,15 @@ router.post("/", async (req, res) => {
                         </div>
 
                         <!-- BUTTON - Download link -->
-                        <div style="margin:30px 0;">
+                        <div style="margin:25px 0;">
                           <a href="${badgeDownloadUrl}"
                              style="
                                background:#003A77;
                                color:#ffffff;
-                               padding:15px 35px;
+                               padding:14px 34px;
                                text-decoration:none;
                                border-radius:30px;
-                               font-size:16px;
+                               font-size:15px;
                                display:inline-block;
                                font-weight:bold;
                                cursor:pointer;
@@ -872,11 +944,11 @@ router.post("/", async (req, res) => {
                           </p>
                         </div>
 
-                        <div style="margin-top:15px; font-size:16px; font-weight:bold; padding:10px; background:#f5f5f5; border-radius:5px;">
+                        <div style="margin-top:15px; font-size:15px; font-weight:bold; padding:10px; background:#f5f5f5; border-radius:5px; color:#003A77;">
                           Visitor Code: ${visitorCode}
                         </div>
 
-                        <p style="font-size:15px;">
+                        <p style="font-size:15px; margin-top:20px;">
                           We look forward to seeing you at the event.
                         </p>
 
@@ -886,37 +958,37 @@ router.post("/", async (req, res) => {
 
                         <p style="text-align:left; margin-top:20px;">
                           Best regards,<br/>
-                          <strong>IndiaMet 2027 Team</strong>
+                          <strong>IndiaMET 2027 Team</strong>
                         </p>
 
-                         </td>
-                       </tr>
+                      </td>
+                    </tr>
 
                     <!-- FOOTER -->
-                      <tr>
+                    <tr>
                       <td style="background:#003A77; color:#fff; padding:15px; text-align:center; font-size:14px;">
                         <strong>13-15 May 2027</strong> • Auto Cluster Exhibition Centre, Pune, India
-                         </td>
-                       </tr>
+                      </td>
+                    </tr>
 
-                      <tr>
+                    <tr>
                       <td style="background:#E6EEF7; padding:20px; font-size:12px; color:#333; text-align:center;">
                         Organizer: <img 
-                  src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774687173/maxxlogo_lulkwh.png"
-                  style="max-width:220px; display:block; margin:0 auto;"
-                  alt="Maxx Business Media Logo"
-                /><br/>
+                          src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774687173/maxxlogo_lulkwh.png"
+                          style="max-width:180px; display:block; margin:0 auto;"
+                          alt="Maxx Business Media Logo"
+                        /><br/>
                         T9, Swastik Manandi Arcade, Bengaluru, India<br/>
                         Tel: +91 91483 19993 | pad@maxxmedia.in | www.indiametexpo.com
-                         </td>
-                       </tr>
+                      </td>
+                    </tr>
 
-                     </table>
+                  </table>
 
-                   </td>
-                 </tr>
+                </td>
+              </tr>
 
-               </table>
+            </table>
 
           </body>
           </html>
@@ -924,7 +996,7 @@ router.post("/", async (req, res) => {
         break;
 
       case "exhibitor-enquiry":
-        subject = "Your Exhibitor Enquiry - IndiaMet 2027";
+        subject = "Your Exhibitor Enquiry - IndiaMET 2027";
         html = `
           <!DOCTYPE html>
           <html>
@@ -932,140 +1004,99 @@ router.post("/", async (req, res) => {
 
             <table width="100%" cellpadding="0" cellspacing="0" border="0">
 
-              <!-- TOP COLOR BACKGROUND -->
-                <tr>
-                <td align="center" style="background:#D7EEFB; padding:40px 0 0;">
+              <!-- TOP COLOR BACKGROUND (REDUCED) -->
+              <tr>
+                <td align="center" style="background:#D7EEFB; padding:20px 0 0;">
 
-                  <!-- BLUE HEADER (INSIDE COLOR AREA) -->
+                  <!-- BLUE HEADER (REDUCED PADDING) -->
                   <table width="600" cellpadding="0" cellspacing="0" border="0"
                     style="background:#003A77; border-radius:6px 6px 0 0; color:#fff;">
                     
-                      <tr>
-                      <td align="center" style="padding:30px;">
+                    <tr>
+                      <td align="center" style="padding:20px 24px;">
                         <img 
-                  src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1793946695/indimet_LOGO_cusfu7.png"
-                  style="max-width:220px; display:block; margin:0 auto;"
-                  alt="IndiaMet  Logo"
-                />
-                        <p style="margin:5px 0 0; font-size:14px;">
-                            IndiaMet 2027 - India's Dedicated Industrial Metrology Exhibition And Summit
+                          src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1793946695/indimet_LOGO_cusfu7.png"
+                          style="max-width:180px; display:block; margin:0 auto;"
+                          alt="IndiaMET 2027 Logo"
+                        />
+                        <p style="margin:6px 0 0; font-size:13px; color:#ffffff; font-weight:600;">
+                          India's Dedicated Industrial Metrology Exhibition And Summit
                         </p>
-                         </td>
-                       </tr>
+                      </td>
+                    </tr>
 
-                     </table>
+                  </table>
 
-                   </td>
-                 </tr>
+                </td>
+              </tr>
 
               <!-- WHITE CARD BODY -->
-                <tr>
+              <tr>
                 <td align="center">
 
                   <table width="600" cellpadding="0" cellspacing="0" border="0"
                     style="background:#ffffff; border-radius:0 0 6px 6px;">
 
                     <!-- CONTENT -->
-                      <tr>
-                      <td style="padding:40px 30px; color:#333;">
+                    <tr>
+                      <td style="padding:30px; color:#333;">
 
                         <p style="font-size:16px;">
-                          Dear ${data.firstName || 'Valued Customer'},
+                          Dear ${[data.firstName, data.lastName].filter(Boolean).join(" ").trim() || data.name || data.contactPerson || 'Valued Exhibitor'},
+                        </p>
+
+                        <p style="font-size:16px; line-height:1.6;">
+                          Thank you for your enquiry about exhibiting at <strong>IndiaMET 2027 – Dedicated Industrial Metrology Exhibition &amp; Summit</strong>.
                         </p>
 
                         <p style="font-size:16px;">
-                          Thank you for your enquiry about eITS IndiaMet 2027- India's Dedicated Industrial Metrology Exhibition And Summit at 
-                          
+                          We have received your exhibiting enquiry details as follows:
                         </p>
 
-                        <p style="font-size:16px;">
-                          We have received your request as follows:
-                        </p>
+                        ${renderDetailsCard(data)}
 
-                        <!-- INFO BOX -->
-                        <table width="100%" cellpadding="10" cellspacing="0" 
-                          style="background:#D7EEFB; margin:20px 0; border-collapse:collapse;">
-                          
-                            <tr>
-                            <td width="40%"><strong>Company Name</strong></td>
-                            <td>: ${data.companyName || data.company || 'Not provided'}</td>
-                             </tr>
-
-                            <tr>
-                            <td><strong>Contact Person</strong></td>
-                            <td>: ${data.firstName || ''} ${data.lastName || ''}</td>
-                             </tr>
-
-                            <tr>
-                            <td><strong>Job Title</strong></td>
-                            <td>: ${data.jobTitle || 'Not provided'}</td>
-                             </tr>
-
-                            <tr>
-                            <td><strong>Address</strong></td>
-                            <td>: ${data.address || 'Not provided'}</td>
-                             </tr>
-
-                            <tr>
-                            <td><strong>Phone Number</strong></td>
-                            <td>: ${data.phone || 'Not provided'}</td>
-                             </tr>
-
-                            <tr>
-                            <td><strong>Email</strong></td>
-                            <td>: ${data.email || 'Not provided'}</td>
-                             </tr>
-
-                            <tr>
-                            <td><strong>Space Requirement</strong></td>
-                            <td>: ${data.standSize || 'Not specified'}</td>
-                             </tr>
-
-                           </table>
-
-                        <p style="font-size:15px;">
-                          Our team will get in touch with you shortly to discuss your requirements 
-                          and provide more information.
+                        <p style="font-size:15px; line-height:1.6;">
+                          Our exhibition sales team will get in touch with you shortly to discuss booth space options, floor plan availability, and provide full participation packages.
                         </p>
 
                         <p style="font-size:15px;">
                           We look forward to the opportunity to collaborate with you at 
-                          <strong>IndiaMet 2027 - India's Dedicated Industrial Metrology Exhibition And Summit</strong>
+                          <strong style="color:#003A77;">IndiaMET 2027!</strong>
                         </p>
 
                         <p style="margin-top:20px;">
                           Best regards,<br/>
-                          <strong>IndiaMet 2027 - India's Dedicated Industrial Metrology Exhibition And Summit</strong>
+                          <strong style="color:#003A77;">IndiaMET 2027 Exhibition Team</strong>
                         </p>
 
-                         </td>
-                       </tr>
+                      </td>
+                    </tr>
 
                     <!-- FOOTER -->
-                      <tr>
+                    <tr>
                       <td style="background:#003A77; color:#fff; padding:15px; text-align:center; font-size:14px;">
                         <strong>13-15 May 2027</strong> • Auto Cluster Exhibition Centre, Pune, India
-                         </td>
-                       </tr>
+                      </td>
+                    </tr>
 
-                      <tr>
+                    <tr>
                       <td style="background:#E6EEF7; padding:20px; font-size:12px; color:#333; text-align:center;">
                         Organizer: <img 
-                  src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774687173/maxxlogo_lulkwh.png"
-                  style="max-width:220px; display:block; margin:0 auto;"
-                  alt="Maxx Business Media Logo"
-                /><br/>
+                          src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774687173/maxxlogo_lulkwh.png"
+                          style="max-width:180px; display:block; margin:0 auto;"
+                          alt="Maxx Business Media Logo"
+                        /><br/>
                         T9, Swastik Manandi Arcade, Bengaluru, India<br/>
                         Tel: +91 91483 19993 | pad@maxxmedia.in | www.indiametexpo.com
-                         </td>
-                       </tr>
+                      </td>
+                    </tr>
 
-                     </table>
+                  </table>
 
-                   </td>
-                 </tr>
+                </td>
+              </tr>
 
-               </table>
+            </table>
 
           </body>
           </html>
@@ -1073,7 +1104,7 @@ router.post("/", async (req, res) => {
         break;
 
       case "delegate-registration":
-        subject = "Delegate Registration Confirmed - IndiaMet 2027";
+        subject = "Delegate Registration Confirmed - IndiaMET 2027";
         html = `
           <!DOCTYPE html>
           <html>
@@ -1081,59 +1112,61 @@ router.post("/", async (req, res) => {
 
             <table width="100%" cellpadding="0" cellspacing="0" border="0">
 
-              <!-- TOP COLOR BACKGROUND -->
-                <tr>
-                <td align="center" style="background:#D7EEFB; padding:40px 0 0;">
+              <!-- TOP COLOR BACKGROUND (REDUCED) -->
+              <tr>
+                <td align="center" style="background:#D7EEFB; padding:20px 0 0;">
 
-                  <!-- BLUE HEADER (INSIDE COLOR AREA) -->
+                  <!-- BLUE HEADER (REDUCED PADDING) -->
                   <table width="600" cellpadding="0" cellspacing="0" border="0"
                     style="background:#003A77; border-radius:6px 6px 0 0; color:#fff;">
                     
-                      <tr>
-                      <td align="center" style="padding:30px;">
-                       <img 
-                  src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1793946695/indimet_LOGO_cusfu7.png"
-                  style="max-width:220px; display:block; margin:0 auto;"
-                  alt="IndiaMet 2027 Logo"
-                />
-                        <p style="margin:5px 0 0; font-size:14px; color:#ffffff;">
-                          IndiaMet 2027 - India's Dedicated Industrial Metrology Exhibition And Summit 
+                    <tr>
+                      <td align="center" style="padding:20px 24px;">
+                        <img 
+                          src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1793946695/indimet_LOGO_cusfu7.png"
+                          style="max-width:180px; display:block; margin:0 auto;"
+                          alt="IndiaMET 2027 Logo"
+                        />
+                        <p style="margin:6px 0 0; font-size:13px; color:#ffffff; font-weight:600;">
+                          India's Dedicated Industrial Metrology Exhibition And Summit
                         </p>
-                         </td>
-                       </tr>
+                      </td>
+                    </tr>
 
-                     </table>
+                  </table>
 
-                   </td>
-                 </tr>
+                </td>
+              </tr>
 
               <!-- WHITE CARD BODY -->
-                <tr>
+              <tr>
                 <td align="center">
 
                   <table width="600" cellpadding="0" cellspacing="0" border="0"
                     style="background:#ffffff; border-radius:0 0 6px 6px;">
 
-                      <tr>
-                      <td style="padding:40px 30px; text-align:center; color:#333;">
+                    <tr>
+                      <td style="padding:30px; text-align:center; color:#333;">
 
-                        <h2 style="margin-bottom:10px;">Delegate Registration Confirmed !</h2>
+                        <h2 style="margin-bottom:10px; color:#003A77;">Delegate Registration Confirmed!</h2>
                         <hr style="border:none; border-top:1px solid #ddd; width:80%; margin:10px auto 20px;" />
 
-                        <p style="text-align:left;">
-                          Dear ${data.firstName || data.name || data.contactPerson || 'Valued Delegate'},
+                        <p style="text-align:left; font-size:16px;">
+                          Dear ${[data.firstName, data.lastName].filter(Boolean).join(" ").trim() || data.name || data.contactPerson || 'Valued Delegate'},
                         </p>
 
-                        <p style="text-align:left;">
+                        <p style="text-align:left; font-size:16px;">
                           Thank you for registering to attend 
-                          <strong>IndiaMet 2027 Conference</strong>.<br/>
-                          Below are your registration details and delegate badge.
+                          <strong>IndiaMET 2027 Conference</strong>.<br/>
+                          Below are your registration details and delegate pass:
                         </p>
 
-                        <div style="margin:30px 0; text-align:center;">
-                          <div style="background:#fff; padding:20px; border-radius:12px; display:inline-block; box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+                        ${renderDetailsCard(data)}
+
+                        <div style="margin:25px 0; text-align:center;">
+                          <div style="background:#fff; padding:20px; border-radius:12px; display:inline-block; box-shadow:0 2px 8px rgba(0,0,0,0.1); border:1px solid #CBD5E1;">
                             <img src="cid:qrcode_${visitorCode}" alt="Delegate QR Code" width="200" height="200" style="width:200px; height:200px; display:block; margin:0 auto;" />
-                            <p style="margin-top:15px; font-size:14px; font-weight:bold; color:#003A77;">IndiaMet 2027 Delegate Pass</p>
+                            <p style="margin-top:15px; font-size:14px; font-weight:bold; color:#003A77;">IndiaMET 2027 Delegate Pass</p>
                             <p style="margin:5px 0; font-size:12px; color:#666;">${[data.firstName, data.lastName].filter(Boolean).join(" ").trim() || data.name || data.contactPerson || ''}</p>
                             <p style="margin:5px 0; font-size:12px; color:#666; font-weight:bold;">Code: ${visitorCode}</p>
                             <p style="margin:8px 0 0; font-size:12px; color:#003A77;">Scan this code to view the delegate details.</p>
@@ -1141,15 +1174,15 @@ router.post("/", async (req, res) => {
                         </div>
 
                         <!-- BUTTON - Download link -->
-                        <div style="margin:30px 0;">
+                        <div style="margin:25px 0;">
                           <a href="${badgeDownloadUrl}"
                              style="
                                background:#003A77;
                                color:#ffffff;
-                               padding:15px 35px;
+                               padding:14px 34px;
                                text-decoration:none;
                                border-radius:30px;
-                               font-size:16px;
+                               font-size:15px;
                                display:inline-block;
                                font-weight:bold;
                                cursor:pointer;
@@ -1161,11 +1194,11 @@ router.post("/", async (req, res) => {
                           </p>
                         </div>
 
-                        <div style="margin-top:15px; font-size:16px; font-weight:bold; padding:10px; background:#f5f5f5; border-radius:5px;">
+                        <div style="margin-top:15px; font-size:15px; font-weight:bold; padding:10px; background:#f5f5f5; border-radius:5px; color:#003A77;">
                           Delegate Code: ${visitorCode}
                         </div>
 
-                        <p style="margin-top:25px;">We look forward to seeing you at the event.</p>
+                        <p style="margin-top:20px; font-size:15px;">We look forward to seeing you at the event.</p>
 
                         <p style="font-size:13px; color:#666;">
                           If you have any questions, feel free to contact us.
@@ -1173,37 +1206,37 @@ router.post("/", async (req, res) => {
 
                         <p style="text-align:left; margin-top:20px;">
                           Best regards,<br/>
-                          <strong>IndiaMet 2027 Team</strong>
+                          <strong>IndiaMET 2027 Team</strong>
                         </p>
 
-                         </td>
-                       </tr>
+                      </td>
+                    </tr>
 
                     <!-- FOOTER -->
-                      <tr>
+                    <tr>
                       <td style="background:#003A77; color:#fff; padding:15px; text-align:center; font-size:14px;">
                         <strong>13-15 May 2027</strong> • Auto Cluster Exhibition Centre, Pune, India
-                         </td>
-                       </tr>
+                      </td>
+                    </tr>
 
-                      <tr>
+                    <tr>
                       <td style="background:#E6EEF7; padding:20px; font-size:12px; color:#333; text-align:center;">
                         Organizer: <img 
-                  src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774687173/maxxlogo_lulkwh.png"
-                  style="max-width:220px; display:block; margin:0 auto;"
-                  alt="Maxx Business Media Logo"
-                /><br/>
+                          src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774687173/maxxlogo_lulkwh.png"
+                          style="max-width:180px; display:block; margin:0 auto;"
+                          alt="Maxx Business Media Logo"
+                        /><br/>
                         T9, Swastik Manandi Arcade, Bengaluru, India<br/>
                         Tel: +91 91483 19993 | pad@maxxmedia.in | www.indiametexpo.com
-                         </td>
-                       </tr>
+                      </td>
+                    </tr>
 
-                     </table>
+                  </table>
 
-                   </td>
-                 </tr>
+                </td>
+              </tr>
 
-               </table>
+            </table>
 
           </body>
           </html>
@@ -1211,113 +1244,112 @@ router.post("/", async (req, res) => {
         break;
 
       case "partner-registration":
-        subject = "Your Partner Registration Confirmation - IndiaMet 2027";
+        subject = "Your Partner Registration Confirmation - IndiaMET 2027";
         html = `
           <!DOCTYPE html>
           <html>
-          <head>
-            <style>
-              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-              .header { background: linear-gradient(135deg, #9333EA 0%, #A855F7 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-              .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
-              .field { margin-bottom: 15px; }
-              .field-label { font-weight: bold; color: #9333EA; }
-              .field-value { margin-left: 10px; }
-              hr { border: none; border-top: 1px solid #ddd; margin: 20px 0; }
-            </style>
-          </head>
-          <body>
-            <div class="container">
-              <div class="header">
-                <h1>Partner Registration Confirmed! 🤝</h1>
-              </div>
-              <div class="content">
-                <h2>Welcome to IndiaMet 2027 - India's Dedicated Industrial Metrology Exhibition And Summit  , ${data.firstName || ''}!</h2>
-                <p>Your partner registration has been successfully completed. Here's a summary of your registration details:</p>
-                
-                <hr/>
-                
-                <div class="field">
-                  <span class="field-label">Name:</span>
-                  <span class="field-value">${data.firstName || ''} ${data.lastName || ''}</span>
-                </div>
-                
-                <div class="field">
-                  <span class="field-label">Job Title:</span>
-                  <span class="field-value">${data.jobTitle || 'Not provided'}</span>
-                </div>
-                
-                <div class="field">
-                  <span class="field-label">Email:</span>
-                  <span class="field-value">${data.email || 'Not provided'}</span>
-                </div>
-                
-                <div class="field">
-                  <span class="field-label">Phone:</span>
-                  <span class="field-value">+91 ${data.phone || 'Not provided'}</span>
-                </div>
-                
-                <div class="field">
-                  <span class="field-label">Company:</span>
-                  <span class="field-value">${data.companyName || 'Not provided'}</span>
-                </div>
-                
-                ${data.gstin ? `
-                <div class="field">
-                  <span class="field-label">GSTIN:</span>
-                  <span class="field-value">${data.gstin}</span>
-                </div>
-                ` : ''}
-                
-                <div class="field">
-                  <span class="field-label">Address:</span>
-                  <span class="field-value">${data.address || 'Not provided'}</span>
-                </div>
-                
-                ${data.website ? `
-                <div class="field">
-                  <span class="field-label">Website:</span>
-                  <span class="field-value"><a href="${data.website}" style="color: #9333EA;">${data.website}</a></span>
-                </div>
-                ` : ''}
-                
-                <div class="field">
-                  <span class="field-label">Marketing Consent:</span>
-                  <span class="field-value">${data.marketingConsent ? '✅ Yes' : '❌ No'}</span>
-                </div>
-                
-                <hr/>
-                
-                <p><strong>What's Next?</strong></p>
-                <ul style="color: #666; margin-bottom: 20px;">
-                  <li>Our partnership team will review your application within 2-3 business days</li>
-                  <li>You'll receive an email with partnership benefits and next steps</li>
-                  <li>A dedicated account manager will be assigned to assist you</li>
-                  <li>We'll schedule an introductory call to discuss collaboration opportunities</li>
-                </ul>
-                
-                <div style="background-color: #F3E8FF; border-left: 4px solid #9333EA; padding: 20px; margin: 20px 0; border-radius: 4px;">
-                  <p style="margin: 0; color: #6B21A8;">
-                    <strong>🤝 Partner Benefits:</strong><br>
-                    • Exclusive networking opportunities<br>
-                    • Priority booth allocation<br>
-                    • Marketing and brand visibility<br>
-                    • Access to partner events<br>
-                    • Business matching services
-                  </p>
-                </div>
-                
-                <p>We're excited about the possibility of partnering with you!</p>
-                
-                <p>Best regards,<br/>
-                <img 
-                  src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774687173/maxxlogo_lulkwh.png"
-                  style="max-width:220px; display:block; margin:0 auto;"
-                  alt="Maxx Business Media Logo"
-                /></p>
-              </div>
-            </div>
+          <body style="margin:0; padding:0; background:#f2f2f2; font-family:Arial, sans-serif;">
+
+            <table width="100%" cellpadding="0" cellspacing="0" border="0">
+
+              <!-- TOP COLOR BACKGROUND (REDUCED) -->
+              <tr>
+                <td align="center" style="background:#D7EEFB; padding:20px 0 0;">
+
+                  <!-- BLUE HEADER (REDUCED PADDING) -->
+                  <table width="600" cellpadding="0" cellspacing="0" border="0"
+                    style="background:#003A77; border-radius:6px 6px 0 0; color:#fff;">
+                    
+                    <tr>
+                      <td align="center" style="padding:20px 24px;">
+                        <img 
+                          src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1793946695/indimet_LOGO_cusfu7.png"
+                          style="max-width:180px; display:block; margin:0 auto;"
+                          alt="IndiaMET 2027 Logo"
+                        />
+                        <p style="margin:6px 0 0; font-size:13px; color:#ffffff; font-weight:600;">
+                          India's Dedicated Industrial Metrology Exhibition And Summit
+                        </p>
+                      </td>
+                    </tr>
+
+                  </table>
+
+                </td>
+              </tr>
+
+              <!-- WHITE CARD BODY -->
+              <tr>
+                <td align="center">
+
+                  <table width="600" cellpadding="0" cellspacing="0" border="0"
+                    style="background:#ffffff; border-radius:0 0 6px 6px;">
+
+                    <!-- CONTENT -->
+                    <tr>
+                      <td style="padding:30px; color:#333;">
+
+                        <h2 style="margin-bottom:10px; color:#003A77; text-align:center;">Partner Registration Confirmed! 🤝</h2>
+                        <hr style="border:none; border-top:1px solid #ddd; width:80%; margin:10px auto 20px;" />
+
+                        <p style="font-size:16px;">
+                          Dear ${[data.firstName, data.lastName].filter(Boolean).join(" ").trim() || data.name || data.contactPerson || 'Valued Partner'},
+                        </p>
+
+                        <p style="font-size:16px; line-height:1.6;">
+                          Thank you for registering as a partner for <strong>IndiaMET 2027 – Dedicated Industrial Metrology Exhibition &amp; Summit</strong>.
+                          Below are your registration details:
+                        </p>
+
+                        ${renderDetailsCard(data)}
+
+                        <div style="background:#F1F8FB; border-left:4px solid #00A1B1; padding:15px; margin:20px 0; border-radius:4px; font-size:14px; line-height:1.6;">
+                          <strong style="color:#003A77;">🤝 Partner Next Steps:</strong>
+                          <ul style="margin:8px 0 0; padding-left:20px; color:#4a5568;">
+                            <li>Our partnership team will review your application within 2-3 business days.</li>
+                            <li>You will receive an email with partner branding guidelines and entitlements.</li>
+                            <li>A dedicated account manager will be assigned to assist your team.</li>
+                          </ul>
+                        </div>
+
+                        <p style="font-size:14px; color:#666;">
+                          If you have any questions, feel free to contact us at pad@maxxmedia.in.
+                        </p>
+
+                        <p style="margin-top:20px;">
+                          Best regards,<br/>
+                          <strong style="color:#003A77;">IndiaMET 2027 Partnership Team</strong>
+                        </p>
+
+                      </td>
+                    </tr>
+
+                    <!-- FOOTER -->
+                    <tr>
+                      <td style="background:#003A77; color:#fff; padding:15px; text-align:center; font-size:14px;">
+                        <strong>13-15 May 2027</strong> • Auto Cluster Exhibition Centre, Pune, India
+                      </td>
+                    </tr>
+
+                    <tr>
+                      <td style="background:#E6EEF7; padding:20px; font-size:12px; color:#333; text-align:center;">
+                        Organizer: <img 
+                          src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774687173/maxxlogo_lulkwh.png"
+                          style="max-width:180px; display:block; margin:0 auto;"
+                          alt="Maxx Business Media Logo"
+                        /><br/>
+                        T9, Swastik Manandi Arcade, Bengaluru, India<br/>
+                        Tel: +91 91483 19993 | pad@maxxmedia.in | www.indiametexpo.com
+                      </td>
+                    </tr>
+
+                  </table>
+
+                </td>
+              </tr>
+
+            </table>
+
           </body>
           </html>
         `;
