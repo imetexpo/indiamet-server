@@ -41,6 +41,133 @@ async function saveContactSubmission(formType, data, emailStatus = "pending") {
   }
 }
 
+function publicBackendUrl() {
+  return (process.env.BACKEND_URL || "http://localhost:5000").replace(/\/+$/, "");
+}
+
+function passPageUrl(visitorCode) {
+  return `${publicBackendUrl()}/api/contact/pass/${encodeURIComponent(visitorCode)}`;
+}
+
+function badgeImageUrl(visitorCode) {
+  return `${publicBackendUrl()}/api/contact/visitor/${encodeURIComponent(visitorCode)}/badge`;
+}
+
+function escapeHtml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+async function findRegistrationByCode(code) {
+  try {
+    const models = await modelFactory.init();
+    const ContactSubmission = models.ContactSubmission;
+    if (ContactSubmission) {
+      const sequelize = ContactSubmission.sequelize;
+      const row = await ContactSubmission.findOne({
+        where: sequelize.where(
+          sequelize.fn(
+            "JSON_UNQUOTE",
+            sequelize.fn("JSON_EXTRACT", sequelize.col("payload"), "$.visitorCode")
+          ),
+          code
+        ),
+        order: [["createdAt", "DESC"]],
+      });
+      if (row) {
+        const payload = typeof row.payload === "string" ? JSON.parse(row.payload) : (row.payload || {});
+        return { formType: row.formType, payload };
+      }
+    }
+  } catch (err) {
+    console.warn("findRegistrationByCode in ContactSubmission error:", err.message);
+  }
+
+  // Fallback to passService / VisitorPass
+  try {
+    const pass = await passService.getPassByCode(code);
+    if (pass) {
+      return {
+        formType: pass.type === "delegate" ? "delegate-registration" : "visitor-registration",
+        payload: {
+          firstName: pass.name ? pass.name.split(" ")[0] : "",
+          lastName: pass.name ? pass.name.split(" ").slice(1).join(" ") : "",
+          name: pass.name,
+          email: pass.email,
+          phone: pass.phone,
+          company: pass.company,
+          designation: pass.designation,
+          city: pass.city,
+          state: pass.state,
+          country: pass.country,
+          visitorCode: pass.registrationNumber,
+        }
+      };
+    }
+  } catch (err) {
+    console.warn("findRegistrationByCode in passService error:", err.message);
+  }
+
+  return null;
+}
+
+function renderPassPage({ code, formType, payload }) {
+  const data = payload || {};
+  const name = [data.firstName, data.lastName].filter(Boolean).join(" ").trim() || data.name || data.contactPerson || "Visitor";
+  const kind = formType === "delegate-registration" ? "Delegate" : "Visitor";
+  const rows = [
+    ["Name", name],
+    ["Email", data.email],
+    ["Phone", data.mobile || data.phone],
+    ["Company", data.company || data.companyName],
+    ["Designation", data.designation],
+    ["City", data.city],
+    ["State", data.state],
+    ["Country", data.country],
+    ["Visitor code", code],
+    ["Pass type", kind],
+    ["Event", "IndiaMET 2027"],
+    ["Dates", "13–15 May 2027"],
+    ["Venue", "Auto Cluster Exhibition Centre, Pune, India"],
+  ].filter(([, value]) => value);
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>${escapeHtml(name)} · IndiaMET 2027 Pass</title>
+</head>
+<body style="margin:0; background:#eef3f8; font-family:Arial, sans-serif; color:#003A77;">
+  <div style="max-width:520px; margin:24px auto; background:#fff; border-radius:16px; overflow:hidden; box-shadow:0 8px 24px rgba(0,58,119,.12);">
+    <div style="background:#003A77; color:#fff; padding:28px 24px; text-align:center;">
+      <div style="font-size:13px; letter-spacing:.14em; text-transform:uppercase;">IndiaMET 2027</div>
+      <h1 style="margin:10px 0 0; font-size:26px;">${escapeHtml(kind)} Pass</h1>
+    </div>
+    <div style="padding:24px;">
+      <p style="margin:0 0 16px; font-size:18px; font-weight:bold; color:#003A77;">${escapeHtml(name)}</p>
+      <table width="100%" cellpadding="0" cellspacing="0" style="font-size:15px;">
+        ${rows.map(([label, value]) => `
+          <tr>
+            <td style="padding:8px 0; color:#5b7086; width:38%;">${escapeHtml(label)}</td>
+            <td style="padding:8px 0; font-weight:bold; color:#1e293b;">${escapeHtml(value)}</td>
+          </tr>
+        `).join("")}
+      </table>
+      <div style="margin-top:24px; text-align:center;">
+        <a href="${badgeImageUrl(code)}?download=1" style="display:inline-block; background:#003A77; color:#fff; padding:12px 24px; border-radius:8px; text-decoration:none; font-weight:bold;">
+          Download Pass QR
+        </a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+}
+
 // Helper function to generate QR code as buffer
 async function generateQRCodeBuffer(data) {
   try {
@@ -166,6 +293,52 @@ function generateInwardTemplate({
   </html>
   `;
 }
+
+router.get("/pass/:code", async (req, res) => {
+  try {
+    const code = String(req.params.code || "").trim();
+    const registration = await findRegistrationByCode(code);
+    if (!registration) {
+      return res.status(404).send("Visitor pass not found");
+    }
+    res.set("Content-Type", "text/html; charset=utf-8");
+    return res.send(renderPassPage({ code, ...registration }));
+  } catch (error) {
+    console.error("Pass page error:", error);
+    return res.status(500).send("Could not load visitor details");
+  }
+});
+
+router.get("/visitor/:code/badge", async (req, res) => {
+  try {
+    const code = String(req.params.code || "").trim();
+    if (!code) {
+      return res.status(400).send("Visitor code is required");
+    }
+
+    const registration = await findRegistrationByCode(code);
+    const kind = registration?.formType === "delegate-registration" ? "Delegate" : "Visitor";
+    const qrContent = passPageUrl(code);
+    const buffer = await generateQRCodeBuffer(qrContent);
+
+    if (!buffer) {
+      return res.status(500).send("Could not generate badge");
+    }
+
+    res.set("Content-Type", "image/png");
+    res.set("Cache-Control", "public, max-age=86400");
+    if (req.query.download === "1") {
+      res.set(
+        "Content-Disposition",
+        `attachment; filename="indiamet-2027-${kind.toLowerCase()}-badge.png"`
+      );
+    }
+    return res.send(buffer);
+  } catch (error) {
+    console.error("Badge image error:", error);
+    return res.status(500).send("Could not generate badge");
+  }
+});
 
 router.get("/visitor/:code", async (req, res) => {
   try {
@@ -329,6 +502,8 @@ router.post("/", async (req, res) => {
     let html = "";
     let visitorCode = null;
     let qrCodeBuffer = null;
+    let badgeUrl = "";
+    let badgeDownloadUrl = "";
     let issued = null;
 
     // Issue digital pass and generate QR code for visitor and delegate registrations
@@ -340,15 +515,14 @@ router.post("/", async (req, res) => {
         data.passUrl = issued.pass.passUrl;
       } catch (passErr) {
         console.warn("Could not issue digital pass via PassService, falling back:", passErr.message);
-        visitorCode = `indiamet-${Date.now()}`;
+        visitorCode = data.visitorCode || `indiamet-${Date.now()}`;
         data.visitorCode = visitorCode;
       }
 
-      // Create a unique QR code content with correct event info
-      const attendeeName = data.name || data.contactPerson || [data.firstName, data.lastName].filter(Boolean).join(" ").trim() || 'Visitor';
-      const qrContent = `IndiaMET 2027 \n${formType === "visitor-registration" ? "Visitor" : "Delegate"}\nName: ${attendeeName}\nEmail: ${data.email || ''}\nCode: ${visitorCode}\nDate: 13-15 May 2027\nVenue: Auto Cluster Exhibition Centre, Pune`;
+      badgeUrl = badgeImageUrl(visitorCode);
+      badgeDownloadUrl = issued?.pass?.passUrl || `${badgeUrl}?download=1`;
 
-      // Generate buffer for email attachments
+      const qrContent = passPageUrl(visitorCode);
       qrCodeBuffer = await generateQRCodeBuffer(qrContent);
     }
 
@@ -619,11 +793,11 @@ router.post("/", async (req, res) => {
 
               <!-- TOP COLOR BACKGROUND -->
                 <tr>
-                <td align="center" style="background:#E8F1F8; padding:40px 0 0;">
+                <td align="center" style="background:#D7EEFB; padding:40px 0 0;">
 
                   <!-- BLUE HEADER (INSIDE COLOR AREA) -->
                   <table width="600" cellpadding="0" cellspacing="0" border="0"
-                    style="background:#FFFFFF; border-radius:6px 6px 0 0; color:#fff;">
+                    style="background:#003A77; border-radius:6px 6px 0 0; color:#fff;">
                     
                       <tr>
                       <td align="center" style="padding:30px;">
@@ -632,7 +806,7 @@ router.post("/", async (req, res) => {
                   style="max-width:220px; display:block; margin:0 auto;"
                   alt="IndiaMet 2027 Logo"
                 />
-                        <p style="margin:5px 0 0; font-size:14px; color:#003A77; font-weight:600;">
+                        <p style="margin:5px 0 0; font-size:14px; color:#ffffff;">
                          IndiaMet 2027 - India's Dedicated Industrial Metrology Exhibition And Summit
                         </p>
                          </td>
@@ -654,11 +828,11 @@ router.post("/", async (req, res) => {
                       <tr>
                       <td style="padding:40px 30px; color:#333; text-align:center;">
 
-                        <h2 style="margin-bottom:10px; color:#003A77;">Visitor Registration Confirmed !</h2>
+                        <h2 style="margin-bottom:10px;">Visitor Registration Confirmed !</h2>
                         <hr style="border:none; border-top:1px solid #ddd; width:80%; margin:10px auto 20px;" />
 
                         <p style="text-align:left; font-size:16px;">
-                          Dear ${data.firstName || data.name || 'Valued Visitor'},
+                          Dear ${data.firstName || data.name || data.contactPerson || 'Valued Visitor'},
                         </p>
 
                         <p style="text-align:left; font-size:16px;">
@@ -668,18 +842,18 @@ router.post("/", async (req, res) => {
 
                         <!-- QR CODE BADGE -->
                         <div style="margin:30px 0; text-align:center;">
-                          <div style="background:#fff; padding:20px; border-radius:12px; display:inline-block; box-shadow:0 2px 8px rgba(0,0,0,0.1); border:1px solid #E2E8F0;">
-                            ${qrCodeBuffer ? `<img src="cid:qrcode_${visitorCode}" alt="Visitor QR Code" style="width:200px; height:200px; display:block; margin:0 auto;" />` : '<p>QR Code will be available at the registration desk</p>'}
+                          <div style="background:#fff; padding:20px; border-radius:12px; display:inline-block; box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+                            <img src="cid:qrcode_${visitorCode}" alt="Visitor QR Code" width="200" height="200" style="width:200px; height:200px; display:block; margin:0 auto;" />
                             <p style="margin-top:15px; font-size:14px; font-weight:bold; color:#003A77;">IndiaMet 2027 Visitor Pass</p>
-                            <p style="margin:5px 0; font-size:12px; color:#666;">${data.firstName || ''} ${data.lastName || ''}</p>
-                            <p style="margin:5px 0; font-size:12px; color:#00A1B1; font-weight:bold;">Code: ${visitorCode}</p>
+                            <p style="margin:5px 0; font-size:12px; color:#666;">${[data.firstName, data.lastName].filter(Boolean).join(" ").trim() || data.name || data.contactPerson || ''}</p>
+                            <p style="margin:5px 0; font-size:12px; color:#666; font-weight:bold;">Code: ${visitorCode}</p>
+                            <p style="margin:8px 0 0; font-size:12px; color:#003A77;">Scan this code to view the visitor details.</p>
                           </div>
                         </div>
 
                         <!-- BUTTON - Download link -->
                         <div style="margin:30px 0;">
-                          <a href="data:image/png;base64,${qrCodeBuffer ? qrCodeBuffer.toString('base64') : ''}" 
-                             download="indiamet-2027-visitor-badge.png"
+                          <a href="${badgeDownloadUrl}"
                              style="
                                background:#003A77;
                                color:#ffffff;
@@ -698,7 +872,7 @@ router.post("/", async (req, res) => {
                           </p>
                         </div>
 
-                        <div style="margin-top:15px; font-size:16px; font-weight:bold; padding:10px; background:#E8F1F8; color:#003A77; border-radius:5px;">
+                        <div style="margin-top:15px; font-size:16px; font-weight:bold; padding:10px; background:#f5f5f5; border-radius:5px;">
                           Visitor Code: ${visitorCode}
                         </div>
 
@@ -907,11 +1081,11 @@ router.post("/", async (req, res) => {
 
             <table width="100%" cellpadding="0" cellspacing="0" border="0">
 
-              <!-- PURPLE BACKGROUND WITH HEADER INSIDE -->
+              <!-- TOP COLOR BACKGROUND -->
                 <tr>
-                <td align="center" style="background:#AE4A84; padding:40px 0 0;">
+                <td align="center" style="background:#D7EEFB; padding:40px 0 0;">
 
-                  <!-- BLUE HEADER (INSIDE PURPLE) -->
+                  <!-- BLUE HEADER (INSIDE COLOR AREA) -->
                   <table width="600" cellpadding="0" cellspacing="0" border="0"
                     style="background:#003A77; border-radius:6px 6px 0 0; color:#fff;">
                     
@@ -922,7 +1096,7 @@ router.post("/", async (req, res) => {
                   style="max-width:220px; display:block; margin:0 auto;"
                   alt="IndiaMet 2027 Logo"
                 />
-                        <p style="margin:5px 0 0; font-size:14px;">
+                        <p style="margin:5px 0 0; font-size:14px; color:#ffffff;">
                           IndiaMet 2027 - India's Dedicated Industrial Metrology Exhibition And Summit 
                         </p>
                          </td>
@@ -947,31 +1121,45 @@ router.post("/", async (req, res) => {
                         <hr style="border:none; border-top:1px solid #ddd; width:80%; margin:10px auto 20px;" />
 
                         <p style="text-align:left;">
-                          Dear ${data.firstName || 'Valued Delegate'},
+                          Dear ${data.firstName || data.name || data.contactPerson || 'Valued Delegate'},
                         </p>
 
                         <p style="text-align:left;">
                           Thank you for registering to attend 
-                          <strong>IndiaMet 2027  Conference</strong>.<br/>
+                          <strong>IndiaMet 2027 Conference</strong>.<br/>
                           Below are your registration details and delegate badge.
                         </p>
 
                         <div style="margin:30px 0; text-align:center;">
                           <div style="background:#fff; padding:20px; border-radius:12px; display:inline-block; box-shadow:0 2px 8px rgba(0,0,0,0.1);">
-                            ${qrCodeBuffer ? `<img src="cid:qrcode_${visitorCode}" alt="Delegate QR Code" style="width:200px; height:200px; display:block; margin:0 auto;" />` : '<p>QR Code will be available at the registration desk</p>'}
-                            <p style="margin-top:15px; font-size:14px; font-weight:bold; color:#0F2F5C;">IndiaMet 2027 Delegate Pass</p>
-                            <p style="margin:5px 0; font-size:12px; color:#666;">${data.firstName || ''} ${data.lastName || ''}</p>
+                            <img src="cid:qrcode_${visitorCode}" alt="Delegate QR Code" width="200" height="200" style="width:200px; height:200px; display:block; margin:0 auto;" />
+                            <p style="margin-top:15px; font-size:14px; font-weight:bold; color:#003A77;">IndiaMet 2027 Delegate Pass</p>
+                            <p style="margin:5px 0; font-size:12px; color:#666;">${[data.firstName, data.lastName].filter(Boolean).join(" ").trim() || data.name || data.contactPerson || ''}</p>
                             <p style="margin:5px 0; font-size:12px; color:#666; font-weight:bold;">Code: ${visitorCode}</p>
+                            <p style="margin:8px 0 0; font-size:12px; color:#003A77;">Scan this code to view the delegate details.</p>
                           </div>
                         </div>
 
-                        <a href="data:image/png;base64,${qrCodeBuffer ? qrCodeBuffer.toString('base64') : ''}"
-                           download="indiamet-2027-delegate-badge.png"
-                           style="background:#003A77; color:#fff; padding:15px 35px;
-                                  text-decoration:none; border-radius:30px; display:inline-block;
-                                  cursor:pointer;">
-                          Download Badge
-                        </a>
+                        <!-- BUTTON - Download link -->
+                        <div style="margin:30px 0;">
+                          <a href="${badgeDownloadUrl}"
+                             style="
+                               background:#003A77;
+                               color:#ffffff;
+                               padding:15px 35px;
+                               text-decoration:none;
+                               border-radius:30px;
+                               font-size:16px;
+                               display:inline-block;
+                               font-weight:bold;
+                               cursor:pointer;
+                             ">
+                            Download Badge
+                          </a>
+                          <p style="font-size:12px; color:#666; margin-top:10px;">
+                            Click the button above to download your delegate badge with QR code.
+                          </p>
+                        </div>
 
                         <div style="margin-top:15px; font-size:16px; font-weight:bold; padding:10px; background:#f5f5f5; border-radius:5px;">
                           Delegate Code: ${visitorCode}
@@ -993,19 +1181,20 @@ router.post("/", async (req, res) => {
 
                     <!-- FOOTER -->
                       <tr>
-                      <td style="background:#003A77; color:#fff; padding:15px; text-align:center;">
+                      <td style="background:#003A77; color:#fff; padding:15px; text-align:center; font-size:14px;">
                         <strong>13-15 May 2027</strong> • Auto Cluster Exhibition Centre, Pune, India
                          </td>
                        </tr>
 
                       <tr>
-                      <td style="background:#E6EEF7; padding:20px; font-size:12px; text-align:center;">
+                      <td style="background:#E6EEF7; padding:20px; font-size:12px; color:#333; text-align:center;">
                         Organizer: <img 
                   src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774687173/maxxlogo_lulkwh.png"
                   style="max-width:220px; display:block; margin:0 auto;"
                   alt="Maxx Business Media Logo"
                 /><br/>
-                        Bengaluru, India | pad@maxxmedia.in | www.indiametexpo.com
+                        T9, Swastik Manandi Arcade, Bengaluru, India<br/>
+                        Tel: +91 91483 19993 | pad@maxxmedia.in | www.indiametexpo.com
                          </td>
                        </tr>
 
@@ -1014,7 +1203,7 @@ router.post("/", async (req, res) => {
                    </td>
                  </tr>
 
-               </tr>
+               </table>
 
           </body>
           </html>
