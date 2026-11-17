@@ -41,22 +41,29 @@ router.post('/send-otp', [
     });
 
     // Send OTP via email
-    const subject = 'Your Verification Code for Exhibition Registration';
+    const subject = 'Your Verification Code - IndiaMET 2027 Registration';
     const html = `
-      <h2>Email Verification</h2>
-      <p>Dear ${name},</p>
-      <p>Thank you for registering for the exhibition. Please use the following verification code to complete your registration:</p>
-      <h1 style="font-size: 32px; letter-spacing: 5px; background: #f0f0f0; padding: 10px; text-align: center;">${otp}</h1>
-      <p>This code will expire in 5 minutes.</p>
-      <p><strong>Registration Details:</strong></p>
-      <ul>
-        <li><strong>Name:</strong> ${name}</li>
-        <li><strong>Company:</strong> ${company}</li>
-        <li><strong>Mobile:</strong> ${mobile}</li>
-        <li><strong>Email:</strong> ${email}</li>
-      </ul>
-      <p>If you didn't request this verification, please ignore this email.</p>
-      <p>Best regards,<br/>Exhibition Team</p>
+      <div style="font-family:Arial,sans-serif;max-width:550px;margin:auto;">
+        <div style="background:#003A77;padding:25px;text-align:center;">
+          <img src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1793946695/indimet_LOGO_cusfu7.png" style="max-width:200px;display:block;margin:0 auto;" alt="IndiaMET 2027 Logo" />
+        </div>
+        <div style="padding:30px;background:#fff;border:1px solid #e2e8f0;">
+          <h2 style="color:#003A77;margin-top:0;">Email Verification</h2>
+          <p>Dear ${name},</p>
+          <p>Thank you for registering for <strong>IndiaMET 2027</strong>. Please use the following verification code to complete your registration:</p>
+          <h1 style="font-size: 32px; letter-spacing: 5px; background: #E8F1F8; color:#003A77; padding: 15px; text-align: center; border-radius:8px;">${otp}</h1>
+          <p style="color:#64748b;font-size:13px;">This code will expire in 5 minutes.</p>
+          <p><strong>Registration Details:</strong></p>
+          <ul style="color:#475569;">
+            <li><strong>Name:</strong> ${name}</li>
+            <li><strong>Company:</strong> ${company || 'N/A'}</li>
+            <li><strong>Mobile:</strong> ${mobile}</li>
+            <li><strong>Email:</strong> ${email}</li>
+          </ul>
+          <p style="color:#64748b;font-size:12px;">If you didn't request this verification, please ignore this email.</p>
+          <p>Best regards,<br/><strong style="color:#003A77;">IndiaMET 2027 Team</strong></p>
+        </div>
+      </div>
     `;
 
     await emailService.sendEmail(email, subject, html);
@@ -139,24 +146,33 @@ router.post('/verify-otp', [
     });
 
     // Send confirmation email to visitor
-    const visitorSubject = 'Registration Confirmed - Exhibition';
+    const visitorSubject = 'Visitor Registration Confirmed - IndiaMET 2027';
     const visitorHtml = `
-      <h2>Registration Confirmed!</h2>
-      <p>Dear ${visitorData.name},</p>
-      <p>Thank you for registering for the exhibition. Your registration has been confirmed.</p>
-      <hr>
-      <h3>Registration Details:</h3>
-      <ul>
-        <li><strong>Name:</strong> ${visitorData.name}</li>
-        <li><strong>Designation:</strong> ${visitorData.designation}</li>
-        <li><strong>Company:</strong> ${visitorData.company}</li>
-        <li><strong>Email:</strong> ${email}</li>
-        <li><strong>Mobile:</strong> ${visitorData.mobile}</li>
-        <li><strong>Address:</strong> ${visitorData.address}, ${visitorData.city}, ${visitorData.state}, ${visitorData.country} - ${visitorData.pinCode}</li>
-      </ul>
-      <hr>
-      <p>We look forward to seeing you at the event!</p>
-      <p>Best regards,<br/>Exhibition Team</p>
+      <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;">
+        <div style="background:#003A77;padding:25px;text-align:center;">
+          <img src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1793946695/indimet_LOGO_cusfu7.png" style="max-width:200px;display:block;margin:0 auto;" alt="IndiaMET 2027 Logo" />
+        </div>
+        <div style="padding:30px;background:#fff;border:1px solid #e2e8f0;">
+          <h2 style="color:#003A77;margin-top:0;">Registration Confirmed!</h2>
+          <p>Dear ${visitorData.name},</p>
+          <p>Thank you for registering for <strong>IndiaMET 2027 Exhibition &amp; Summit</strong>. Your registration has been confirmed.</p>
+          <hr style="border:none;border-top:1px solid #eee;margin:20px 0;">
+          <h3 style="color:#003A77;">Registration Details:</h3>
+          <ul style="color:#475569;">
+            <li><strong>Name:</strong> ${visitorData.name}</li>
+            <li><strong>Designation:</strong> ${visitorData.designation || 'N/A'}</li>
+            <li><strong>Company:</strong> ${visitorData.company || 'N/A'}</li>
+            <li><strong>Email:</strong> ${email}</li>
+            <li><strong>Mobile:</strong> ${visitorData.mobile}</li>
+            <li><strong>Address:</strong> ${[visitorData.address, visitorData.city, visitorData.state, visitorData.country, visitorData.pinCode].filter(Boolean).join(', ')}</li>
+          </ul>
+          <hr style="border:none;border-top:1px solid #eee;margin:20px 0;">
+          <p><strong>Dates:</strong> 13–15 May 2027 (10:00 AM – 6:00 PM)</p>
+          <p><strong>Venue:</strong> Auto Cluster Exhibition Centre, Pune, India</p>
+          <p>We look forward to seeing you at the event!</p>
+          <p>Best regards,<br/><strong style="color:#003A77;">IndiaMET 2027 Team</strong></p>
+        </div>
+      </div>
     `;
 
     await emailService.sendEmail(email, visitorSubject, visitorHtml);
@@ -170,13 +186,18 @@ router.post('/verify-otp', [
     });
 
     if (exhibitor) {
-      const exhibitorSubject = 'New Visitor Registration for Your Exhibition';
+      const exhibitorSubject = 'New Visitor Registration - IndiaMET 2027';
       const exhibitorHtml = `
-        <h2>New Visitor Registration</h2>
-        <p>Dear ${exhibitor.name},</p>
-        <p>A new visitor has registered for your exhibition:</p>
-        <hr>
-        <h3>Visitor Details:</h3>
+        <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;">
+          <div style="background:#003A77;padding:25px;text-align:center;">
+            <img src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1793946695/indimet_LOGO_cusfu7.png" style="max-width:200px;display:block;margin:0 auto;" alt="IndiaMET 2027 Logo" />
+          </div>
+          <div style="padding:30px;background:#fff;border:1px solid #e2e8f0;">
+            <h2 style="color:#003A77;margin-top:0;">New Visitor Registration</h2>
+            <p>Dear ${exhibitor.name},</p>
+            <p>A new visitor has registered for IndiaMET 2027 from your company or interest:</p>
+            <hr style="border:none;border-top:1px solid #eee;margin:20px 0;">
+            <h3 style="color:#003A77;">Visitor Details:</h3>
         <ul>
           <li><strong>Name:</strong> ${visitorData.name}</li>
           <li><strong>Designation:</strong> ${visitorData.designation}</li>

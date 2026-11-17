@@ -619,7 +619,7 @@ router.post("/", async (req, res) => {
 
               <!-- TOP COLOR BACKGROUND -->
                 <tr>
-                <td align="center" style="background:#D6E9D8; padding:40px 0 0;">
+                <td align="center" style="background:#E8F1F8; padding:40px 0 0;">
 
                   <!-- BLUE HEADER (INSIDE COLOR AREA) -->
                   <table width="600" cellpadding="0" cellspacing="0" border="0"
@@ -630,9 +630,9 @@ router.post("/", async (req, res) => {
                         <img 
                   src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1793946695/indimet_LOGO_cusfu7.png"
                   style="max-width:220px; display:block; margin:0 auto;"
-                  alt="ITS India Tyre Show Logo"
+                  alt="IndiaMet 2027 Logo"
                 />
-                        <p style="margin:5px 0 0; font-size:14px;">
+                        <p style="margin:5px 0 0; font-size:14px; color:#003A77; font-weight:600;">
                          IndiaMet 2027 - India's Dedicated Industrial Metrology Exhibition And Summit
                         </p>
                          </td>
@@ -654,7 +654,7 @@ router.post("/", async (req, res) => {
                       <tr>
                       <td style="padding:40px 30px; color:#333; text-align:center;">
 
-                        <h2 style="margin-bottom:10px;">Visitor Registration Confirmed !</h2>
+                        <h2 style="margin-bottom:10px; color:#003A77;">Visitor Registration Confirmed !</h2>
                         <hr style="border:none; border-top:1px solid #ddd; width:80%; margin:10px auto 20px;" />
 
                         <p style="text-align:left; font-size:16px;">
@@ -662,26 +662,26 @@ router.post("/", async (req, res) => {
                         </p>
 
                         <p style="text-align:left; font-size:16px;">
-                          Thank you for registering to attend <strong>IndiaMet  2027</strong>.<br/>
+                          Thank you for registering to attend <strong>IndiaMet 2027</strong>.<br/>
                           Below are your registration details and visitor badge.
                         </p>
 
                         <!-- QR CODE BADGE -->
                         <div style="margin:30px 0; text-align:center;">
-                          <div style="background:#fff; padding:20px; border-radius:12px; display:inline-block; box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+                          <div style="background:#fff; padding:20px; border-radius:12px; display:inline-block; box-shadow:0 2px 8px rgba(0,0,0,0.1); border:1px solid #E2E8F0;">
                             ${qrCodeBuffer ? `<img src="cid:qrcode_${visitorCode}" alt="Visitor QR Code" style="width:200px; height:200px; display:block; margin:0 auto;" />` : '<p>QR Code will be available at the registration desk</p>'}
-                            <p style="margin-top:15px; font-size:14px; font-weight:bold; color:#0F2F5C;">IndiaMet 2027 Visitor Pass</p>
+                            <p style="margin-top:15px; font-size:14px; font-weight:bold; color:#003A77;">IndiaMet 2027 Visitor Pass</p>
                             <p style="margin:5px 0; font-size:12px; color:#666;">${data.firstName || ''} ${data.lastName || ''}</p>
-                            <p style="margin:5px 0; font-size:12px; color:#666; font-weight:bold;">Code: ${visitorCode}</p>
+                            <p style="margin:5px 0; font-size:12px; color:#00A1B1; font-weight:bold;">Code: ${visitorCode}</p>
                           </div>
                         </div>
 
                         <!-- BUTTON - Download link -->
                         <div style="margin:30px 0;">
                           <a href="data:image/png;base64,${qrCodeBuffer ? qrCodeBuffer.toString('base64') : ''}" 
-                             download="itstyreshow-2026-visitor-badge.png"
+                             download="indiamet-2027-visitor-badge.png"
                              style="
-                               background:#0F2F5C;
+                               background:#003A77;
                                color:#ffffff;
                                padding:15px 35px;
                                text-decoration:none;
@@ -698,7 +698,7 @@ router.post("/", async (req, res) => {
                           </p>
                         </div>
 
-                        <div style="margin-top:15px; font-size:16px; font-weight:bold; padding:10px; background:#f5f5f5; border-radius:5px;">
+                        <div style="margin-top:15px; font-size:16px; font-weight:bold; padding:10px; background:#E8F1F8; color:#003A77; border-radius:5px;">
                           Visitor Code: ${visitorCode}
                         </div>
 
@@ -733,7 +733,7 @@ router.post("/", async (req, res) => {
                   alt="Maxx Business Media Logo"
                 /><br/>
                         T9, Swastik Manandi Arcade, Bengaluru, India<br/>
-                        Tel: +91 91483 19993| pad@maxxmedia.in | www.indiametexpo.com
+                        Tel: +91 91483 19993 | pad@maxxmedia.in | www.indiametexpo.com
                          </td>
                        </tr>
 
@@ -966,8 +966,8 @@ router.post("/", async (req, res) => {
                         </div>
 
                         <a href="data:image/png;base64,${qrCodeBuffer ? qrCodeBuffer.toString('base64') : ''}"
-                           download="itstyreshow-2026-delegate-badge.png"
-                           style="background:#0F2F5C; color:#fff; padding:15px 35px;
+                           download="indiamet-2027-delegate-badge.png"
+                           style="background:#003A77; color:#fff; padding:15px 35px;
                                   text-decoration:none; border-radius:30px; display:inline-block;
                                   cursor:pointer;">
                           Download Badge
@@ -994,7 +994,7 @@ router.post("/", async (req, res) => {
                     <!-- FOOTER -->
                       <tr>
                       <td style="background:#003A77; color:#fff; padding:15px; text-align:center;">
-                        <strong>8-10 Oct 2026</strong> • Auto Cluster Exhibition Centre, Pune, India
+                        <strong>13-15 May 2027</strong> • Auto Cluster Exhibition Centre, Pune, India
                          </td>
                        </tr>
 
@@ -1022,7 +1022,7 @@ router.post("/", async (req, res) => {
         break;
 
       case "partner-registration":
-        subject = "Your Partner Registration Confirmation - ITS India Tyre Show";
+        subject = "Your Partner Registration Confirmation - IndiaMet 2027";
         html = `
           <!DOCTYPE html>
           <html>
@@ -1135,7 +1135,7 @@ router.post("/", async (req, res) => {
         break;
 
       default:
-        subject = "Your Form Submission - ITS India Tyre Show";
+        subject = "Your Form Submission - IndiaMet 2027";
         html = `
           <h2>Thank you for your submission</h2>
           <p>Dear ${data.firstName || 'Valued Customer'},</p>
@@ -1236,12 +1236,12 @@ router.post("/", async (req, res) => {
           break;
 
         case "visitor-registration":
-          adminSubject = "Visitor Registration - IndiaMet 2027";
+          adminSubject = "New Visitor Registration - IndiaMet 2027";
           adminHtml = generateInwardTemplate({
-            title: "New Visitor Registration !",
+            title: "New Visitor Registration - IndiaMet 2027",
             lightBg: "#FFFFFF",
-            stripColor: "#CFE3D5",
-            titleColor: "#0F8F4F",
+            stripColor: "#00A1B1",
+            titleColor: "#003A77",
             data: { ...data, visitorCode: visitorCode || 'N/A' }
           });
           break;
