@@ -231,9 +231,10 @@ router.get("/test", (req, res) => {
     message: "Exhibitor credentials route is working",
     timestamp: new Date().toISOString(),
     emailService: {
+      provider: "resend",
       initialized: emailService.initialized,
-      fromEmail: process.env.SENDGRID_FROM || 'Not configured',
-      hasApiKey: !!process.env.SENDGRID_API_KEY
+      fromEmail: process.env.RESEND_FROM || 'Not configured',
+      hasApiKey: !!process.env.RESEND_API_KEY
     }
   });
 });

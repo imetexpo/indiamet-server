@@ -53,11 +53,15 @@ class EmailService {
         html,
       });
 
+      if (response.error || !response.data?.id) {
+        throw new Error(response.error?.message || "Resend did not return a message ID");
+      }
+
       console.log(`✅ Email sent successfully to ${to}`);
 
       return {
         success: true,
-        messageId: response.data?.id,
+        messageId: response.data.id,
       };
     } catch (error) {
       console.error("❌ Resend Error:", error);
@@ -90,15 +94,21 @@ class EmailService {
           {
             filename: attachment.filename,
             content: attachment.content,
+            contentId: attachment.cid,
+            contentType: attachment.contentType,
           },
         ],
       });
+
+      if (response.error || !response.data?.id) {
+        throw new Error(response.error?.message || "Resend did not return a message ID");
+      }
 
       console.log(`✅ Email with attachment sent successfully to ${to}`);
 
       return {
         success: true,
-        messageId: response.data?.id,
+        messageId: response.data.id,
       };
     } catch (error) {
       console.error("❌ Resend Attachment Error:", error);

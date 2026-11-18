@@ -1139,10 +1139,12 @@ router.post("/", async (req, res) => {
     // Send email to user with their submitted details
     console.log(`📧 Sending email to user: ${data.email}`);
 
+    let userEmailResult;
+
     // Prepare email options with attachments for QR code
     if ((formType === "visitor-registration" || formType === "delegate-registration") && qrCodeBuffer) {
       // Use the attachment method from EmailService
-      await emailService.sendEmailWithAttachment({
+      userEmailResult = await emailService.sendEmailWithAttachment({
         to: data.email,
         subject: subject,
         html: html,
@@ -1154,9 +1156,14 @@ router.post("/", async (req, res) => {
         }
       });
     } else {
-      await emailService.sendEmail(data.email, subject, html);
+      userEmailResult = await emailService.sendEmail(data.email, subject, html);
     }
-    console.log(`✅ User email sent successfully to ${data.email}`);
+    const emailSent = userEmailResult?.success === true;
+    if (emailSent) {
+      console.log(`✅ User email sent successfully to ${data.email}`);
+    } else {
+      console.error("❌ User confirmation email failed:", userEmailResult?.error || "Unknown email error");
+    }
 
     // Send notification to admin
     try {
@@ -1247,11 +1254,14 @@ router.post("/", async (req, res) => {
           });
       }
 
-      await emailService.sendEmail(
+      const adminEmailResult = await emailService.sendEmail(
         adminEmail,
         adminSubject,
         adminHtml
       );
+      if (!adminEmailResult?.success) {
+        throw new Error(adminEmailResult?.error || "Admin notification could not be sent");
+      }
       console.log(`✅ Admin notification sent to ${adminEmail}`);
     } catch (adminError) {
       console.error("❌ Admin notification failed:", adminError);
@@ -1259,11 +1269,22 @@ router.post("/", async (req, res) => {
     }
 
     if (submission) {
-      await submission.update({ emailStatus: 'sent' }).catch(() => null);
+      await submission.update({ emailStatus: emailSent ? 'sent' : 'failed' }).catch(() => null);
+    }
+
+    if (!emailSent) {
+      return res.status(502).json({
+        success: false,
+        emailSent: false,
+        message: "Your details were received, but the confirmation email could not be sent. Please contact pad@maxxmedia.in for help.",
+        visitorCode: visitorCode || null,
+        ...(issued ? { pass: issued.pass, delivery: issued.delivery } : {})
+      });
     }
 
     return res.status(200).json({
       success: true,
+      emailSent: true,
       message: "Form submitted successfully. Please check your email for confirmation.",
       visitorCode: visitorCode || null,
       ...(issued ? { pass: issued.pass, delivery: issued.delivery } : {})
@@ -1290,9 +1311,11 @@ router.get("/test", (req, res) => {
     success: true,
     message: "Contact API is working",
     timestamp: new Date().toISOString(),
+    provider: "resend",
     environment: {
-      hasSendGridKey: !!process.env.SENDGRID_API_KEY,
-      hasSendGridFrom: !!process.env.SENDGRID_FROM
+      hasResendKey: !!process.env.RESEND_API_KEY,
+      hasResendFrom: !!process.env.RESEND_FROM,
+      emailServiceInitialized: emailService.initialized
     }
   });
 });
