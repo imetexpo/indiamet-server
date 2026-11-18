@@ -274,6 +274,93 @@ function renderSponsorDetailsCard(data = {}) {
   `;
 }
 
+function generateUserEmailTemplate({
+  name,
+  actionText,
+  teamName,
+  detailsCardHtml,
+  extraContent = "",
+  headerBg = "#F2F8FA",
+  primaryColor = "#003A77",
+  footerDateBg = "#003A77",
+  footerDateColor = "#ffffff",
+  footerOrgBg = "#E6EEF7"
+}) {
+  return `
+<!DOCTYPE html>
+<html>
+<body style="margin:0; padding:0; background:#f2f2f2; font-family:Arial, sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f2f2f2; padding:25px 0;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff; border-radius:8px; overflow:hidden; border:1px solid #E2E8F0;">
+          
+          <!-- LOGO HEADER (REDUCED COLOR, NO DARK BANNER) -->
+          <tr>
+            <td align="center" style="background:${headerBg}; padding:25px 24px; border-bottom:1px solid #E2E8F0;">
+              <img 
+                src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1793946695/indimet_LOGO_cusfu7.png"
+                style="max-width:180px; display:block; margin:0 auto;"
+                alt="IndiaMET 2027 Logo"
+              />
+            </td>
+          </tr>
+
+          <!-- MAIN BODY OF THE CARD -->
+          <tr>
+            <td style="padding:30px; color:#333; font-family:Arial, sans-serif; text-align:left;">
+              <p style="font-size:16px; margin:0 0 16px 0; color:#1e293b;">
+                Dear ${name},
+              </p>
+
+              <p style="font-size:16px; line-height:1.6; margin:0 0 20px 0; color:#334155;">
+                Thank you for your interest in ${actionText} <strong>IndiaMET 2027 – Dedicated Industrial Metrology Exhibition &amp; Summit</strong>. Below are your registration details:
+              </p>
+
+              ${detailsCardHtml}
+
+              ${extraContent}
+
+              <p style="font-size:14px; color:#555; margin:20px 0 0 0; line-height:1.5;">
+                If you have any questions, feel free to contact us at <a href="mailto:pad@maxxmedia.in" style="color:${primaryColor}; text-decoration:none; font-weight:bold;">pad@maxxmedia.in</a>.
+              </p>
+
+              <p style="font-size:15px; margin:20px 0 0 0; line-height:1.5; color:#1e293b;">
+                Best regards,<br/>
+                <strong style="color:${primaryColor};">IndiaMET 2027 ${teamName}</strong>
+              </p>
+            </td>
+          </tr>
+
+          <!-- FOOTER: DATE & VENUE -->
+          <tr>
+            <td style="background:${footerDateBg}; color:${footerDateColor}; padding:15px; text-align:center; font-size:14px;">
+              <strong>13-15 May 2027</strong> • Auto Cluster Exhibition Centre, Pune, India
+            </td>
+          </tr>
+
+          <!-- FOOTER: ORGANIZER -->
+          <tr>
+            <td style="background:${footerOrgBg}; padding:20px; font-size:12px; color:#333; text-align:center; line-height:1.6;">
+              Organizer: <img 
+                src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774687173/maxxlogo_lulkwh.png"
+                style="max-width:180px; display:block; margin:8px auto;"
+                alt="Maxx Business Media Logo"
+              /><br/>
+              T9, Swastik Manandi Arcade, Bengaluru, India<br/>
+              Tel: +91 91483 19993 | pad@maxxmedia.in | www.indiametexpo.com
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `.trim();
+}
+
 function generateInwardTemplate({
   title,
   lightBg = "#FFFFFF",
@@ -602,9 +689,9 @@ router.post("/", async (req, res) => {
     }
 
     if (!data.email) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Email address is required" 
+      return res.status(400).json({
+        success: false,
+        message: "Email address is required"
       });
     }
 
@@ -645,786 +732,210 @@ router.post("/", async (req, res) => {
 
     const submission = await saveContactSubmission(formType, data, "pending");
 
+    const userName = [data.firstName, data.lastName].filter(Boolean).join(" ").trim() || data.name || data.contactPerson || "Valued Customer";
+
     // Safely access data with fallbacks to prevent undefined errors
     switch (formType) {
-            case "event-brochure":
+      case "event-brochure":
         subject = "Your Event Brochure - IndiaMET 2027";
-        html = `
-          <!DOCTYPE html>
-          <html>
-          <body style="margin:0; padding:0; background:#f2f2f2; font-family:Arial, sans-serif;">
-
-            <table width="100%" cellpadding="0" cellspacing="0" border="0">
-
-              <!-- TOP COLOR BACKGROUND (REDUCED) -->
-              <tr>
-                <td align="center" style="background:#D7EEFB; padding:20px 0 0;">
-
-                  <!-- BLUE HEADER (REDUCED PADDING) -->
-                  <table width="600" cellpadding="0" cellspacing="0" border="0"
-                    style="background:#003A77; border-radius:6px 6px 0 0; color:#fff;">
-                    
-                    <tr>
-                      <td align="center" style="padding:20px 24px;">
-                        <img 
-                          src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1793946695/indimet_LOGO_cusfu7.png"
-                          style="max-width:180px; display:block; margin:0 auto;"
-                          alt="IndiaMET 2027 Logo"
-                        />
-                        <p style="margin:6px 0 0; font-size:13px; color:#ffffff; font-weight:600;">
-                          India's Dedicated Industrial Metrology Exhibition And Summit
-                        </p>
-                      </td>
-                    </tr>
-
-                  </table>
-
-                </td>
-              </tr>
-
-              <!-- WHITE CARD BODY -->
-              <tr>
-                <td align="center">
-
-                  <table width="600" cellpadding="0" cellspacing="0" border="0"
-                    style="background:#ffffff; border-radius:0 0 6px 6px;">
-
-                    <!-- CONTENT -->
-                    <tr>
-                      <td style="padding:30px; color:#333; text-align:center;">
-
-                        <p style="text-align:left; font-size:16px;">
-                          Dear ${[data.firstName, data.lastName].filter(Boolean).join(" ").trim() || data.name || data.contactPerson || 'Valued Customer'},
-                        </p>
-
-                        <p style="text-align:left; font-size:16px;">
-                          Thank you for requesting the <strong>IndiaMET 2027</strong> Event Brochure. Below are your submitted details:
-                        </p>
-
-                        ${renderDetailsCard(data)}
-
-                        <!-- IMAGE -->
-                        <div style="margin:25px 0;">
-                          <img 
-                            src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1793946695/indimet_LOGO_cusfu7.png" 
-                            alt="IndiaMET 2027 Brochure"
-                            style="width:100%; max-width:400px; border-radius:6px;"
-                          />
-                        </div>
-
-                        <!-- BUTTON -->
-                        <div style="margin:25px 0;">
-                          <a href="https://res.cloudinary.com/deo4vpw8f/image/upload/v1793947874/IndiaMet_Brochure_compressed_ex2v66.pdf"
-                             style="
-                               background:#003A77;
-                               color:#ffffff;
-                               padding:14px 32px;
-                               text-decoration:none;
-                               border-radius:30px;
-                               font-size:15px;
-                               display:inline-block;
-                               font-weight:bold;
-                             ">
-                            Download Brochure
-                          </a>
-                          <p style="font-size:12px; color:#666; margin-top:10px;">
-                            Click the button above to download your copy.
-                          </p>
-                        </div>
-
-                        <p style="font-size:14px; color:#666;">
-                          If you have any questions, feel free to contact us.
-                        </p>
-
-                        <p style="text-align:left; margin-top:20px;">
-                          Best regards,<br/>
-                          <strong>IndiaMET 2027 Team</strong>
-                        </p>
-
-                      </td>
-                    </tr>
-
-                    <!-- FOOTER -->
-                    <tr>
-                      <td style="background:#003A77; color:#fff; padding:15px; text-align:center; font-size:14px;">
-                        <strong>13-15 May 2027</strong> • Auto Cluster Exhibition Centre, Pune, India
-                      </td>
-                    </tr>
-
-                    <tr>
-                      <td style="background:#E6EEF7; padding:20px; font-size:12px; color:#333; text-align:center;">
-                        Organizer: <img 
-                          src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774687173/maxxlogo_lulkwh.png"
-                          style="max-width:180px; display:block; margin:0 auto;"
-                          alt="Maxx Business Media Logo"
-                        /><br/>
-                        T9, Swastik Manandi Arcade, Bengaluru, India<br/>
-                        Tel: +91 91483 19993 | pad@maxxmedia.in | www.indiametexpo.com
-                      </td>
-                    </tr>
-
-                  </table>
-
-                </td>
-              </tr>
-
-            </table>
-
-          </body>
-          </html>
-        `;
+        html = generateUserEmailTemplate({
+          name: userName,
+          actionText: "downloading the event brochure for",
+          teamName: "Brochure Team",
+          detailsCardHtml: renderDetailsCard(data),
+          extraContent: `
+            <div style="margin:25px 0; text-align:center;">
+              <a href="https://res.cloudinary.com/deo4vpw8f/image/upload/v1793947874/IndiaMet_Brochure_compressed_ex2v66.pdf"
+                 style="
+                   background:#003A77;
+                   color:#ffffff;
+                   padding:14px 32px;
+                   text-decoration:none;
+                   border-radius:30px;
+                   font-size:15px;
+                   display:inline-block;
+                   font-weight:bold;
+                 ">
+                Download Brochure
+              </a>
+              <p style="font-size:12px; color:#666; margin-top:10px;">
+                Click the button above to download your copy.
+              </p>
+            </div>
+          `
+        });
         break;
 
       case "post-show-report":
         subject = "Your Post Show Report - IndiaMET 2027";
-        html = `
-          <!DOCTYPE html>
-          <html>
-          <body style="margin:0; padding:0; background:#f2f2f2; font-family:Arial, sans-serif;">
-
-            <table width="100%" cellpadding="0" cellspacing="0" border="0">
-
-              <!-- TOP COLOR BACKGROUND (REDUCED) -->
-              <tr>
-                <td align="center" style="background:#D7EEFB; padding:20px 0 0;">
-
-                  <!-- BLUE HEADER (REDUCED PADDING) -->
-                  <table width="600" cellpadding="0" cellspacing="0" border="0"
-                    style="background:#003A77; border-radius:6px 6px 0 0; color:#fff;">
-                    
-                    <tr>
-                      <td align="center" style="padding:20px 24px;">
-                        <img 
-                          src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1793946695/indimet_LOGO_cusfu7.png"
-                          style="max-width:180px; display:block; margin:0 auto;"
-                          alt="IndiaMET 2027 Logo"
-                        />
-                        <p style="margin:6px 0 0; font-size:13px; color:#ffffff; font-weight:600;">
-                          India's Dedicated Industrial Metrology Exhibition And Summit
-                        </p>
-                      </td>
-                    </tr>
-
-                  </table>
-
-                </td>
-              </tr>
-
-              <!-- WHITE CARD BODY -->
-              <tr>
-                <td align="center">
-
-                  <table width="600" cellpadding="0" cellspacing="0" border="0"
-                    style="background:#ffffff; border-radius:0 0 6px 6px;">
-
-                    <!-- CONTENT -->
-                    <tr>
-                      <td style="padding:30px; color:#333; text-align:center;">
-
-                        <p style="text-align:left; font-size:16px;">
-                          Dear ${[data.firstName, data.lastName].filter(Boolean).join(" ").trim() || data.name || data.contactPerson || 'Valued Customer'},
-                        </p>
-
-                        <p style="text-align:left; font-size:16px;">
-                          Thank you for requesting the <strong>IndiaMET 2027</strong> Post Show Report. Below are your submitted details:
-                        </p>
-
-                        ${renderDetailsCard(data)}
-
-                        <!-- IMAGE -->
-                        <div style="margin:25px 0;">
-                          <img 
-                            src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1793946695/indimet_LOGO_cusfu7.png" 
-                            alt="Post Show Report"
-                            style="width:100%; max-width:400px; border-radius:6px;"
-                          />
-                        </div>
-
-                        <!-- BUTTON -->
-                        <div style="margin:25px 0;">
-                          <a href="https://drive.google.com/your-post-show-report-link"
-                             style="
-                               background:#003A77;
-                               color:#ffffff;
-                               padding:14px 32px;
-                               text-decoration:none;
-                               border-radius:30px;
-                               font-size:15px;
-                               display:inline-block;
-                               font-weight:bold;
-                             ">
-                            Download Report
-                          </a>
-                          <p style="font-size:12px; color:#666; margin-top:10px;">
-                            Click the button above to download your copy.
-                          </p>
-                        </div>
-
-                        <p style="font-size:14px; color:#666;">
-                          If you have any questions, feel free to contact us.
-                        </p>
-
-                        <p style="text-align:left; margin-top:20px;">
-                          Best regards,<br/>
-                          <strong>IndiaMET 2027 Team</strong>
-                        </p>
-
-                      </td>
-                    </tr>
-
-                    <!-- FOOTER -->
-                    <tr>
-                      <td style="background:#003A77; color:#fff; padding:15px; text-align:center; font-size:14px;">
-                        <strong>13-15 May 2027</strong> • Auto Cluster Exhibition Centre, Pune, India
-                      </td>
-                    </tr>
-
-                    <tr>
-                      <td style="background:#E6EEF7; padding:20px; font-size:12px; color:#333; text-align:center;">
-                        Organizer: <img 
-                          src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774687173/maxxlogo_lulkwh.png"
-                          style="max-width:180px; display:block; margin:0 auto;"
-                          alt="Maxx Business Media Logo"
-                        /><br/>
-                        T9, Swastik Manandi Arcade, Bengaluru, India<br/>
-                        Tel: +91 91483 19993 | pad@maxxmedia.in | www.indiametexpo.com
-                      </td>
-                    </tr>
-
-                  </table>
-
-                </td>
-              </tr>
-
-            </table>
-
-          </body>
-          </html>
-        `;
+        html = generateUserEmailTemplate({
+          name: userName,
+          actionText: "downloading the post show report for",
+          teamName: "Post Show Report Team",
+          detailsCardHtml: renderDetailsCard(data),
+          extraContent: `
+            <div style="margin:25px 0; text-align:center;">
+              <a href="https://res.cloudinary.com/deo4vpw8f/image/upload/v1793947874/IndiaMet_Brochure_compressed_ex2v66.pdf"
+                 style="
+                   background:#003A77;
+                   color:#ffffff;
+                   padding:14px 32px;
+                   text-decoration:none;
+                   border-radius:30px;
+                   font-size:15px;
+                   display:inline-block;
+                   font-weight:bold;
+                 ">
+                Download Report
+              </a>
+              <p style="font-size:12px; color:#666; margin-top:10px;">
+                Click the button above to download your copy.
+              </p>
+            </div>
+          `
+        });
         break;
 
       case "visitor-registration":
         subject = "Visitor Registration Confirmed - IndiaMET 2027";
-        html = `
-          <!DOCTYPE html>
-          <html>
-          <body style="margin:0; padding:0; background:#f2f2f2; font-family:Arial, sans-serif;">
+        html = generateUserEmailTemplate({
+          name: userName,
+          actionText: "visiting",
+          teamName: "Visitor Registration Team",
+          detailsCardHtml: renderDetailsCard(data),
+          extraContent: `
+            <!-- QR CODE BADGE -->
+            <div style="margin:25px 0; text-align:center;">
+              <div style="background:#fff; padding:20px; border-radius:12px; display:inline-block; box-shadow:0 2px 8px rgba(0,0,0,0.1); border:1px solid #CBD5E1;">
+                <img src="cid:qrcode_${visitorCode}" alt="Visitor QR Code" width="200" height="200" style="width:200px; height:200px; display:block; margin:0 auto;" />
+                <p style="margin-top:15px; font-size:14px; font-weight:bold; color:#003A77;">IndiaMET 2027 Visitor Pass</p>
+                <p style="margin:5px 0; font-size:12px; color:#666;">${userName}</p>
+                <p style="margin:5px 0; font-size:12px; color:#666; font-weight:bold;">Code: ${visitorCode}</p>
+                <p style="margin:8px 0 0; font-size:12px; color:#003A77;">Scan this code to view the visitor details.</p>
+              </div>
+            </div>
 
-            <table width="100%" cellpadding="0" cellspacing="0" border="0">
+            <!-- BUTTON - Download link -->
+            <div style="margin:25px 0; text-align:center;">
+              <a href="${badgeDownloadUrl}"
+                 style="
+                   background:#003A77;
+                   color:#ffffff;
+                   padding:14px 34px;
+                   text-decoration:none;
+                   border-radius:30px;
+                   font-size:15px;
+                   display:inline-block;
+                   font-weight:bold;
+                   cursor:pointer;
+                 ">
+                Download Badge
+              </a>
+              <p style="font-size:12px; color:#666; margin-top:10px;">
+                Click the button above to download your visitor badge with QR code.
+              </p>
+            </div>
 
-              <!-- TOP COLOR BACKGROUND (REDUCED) -->
-              <tr>
-                <td align="center" style="background:#D7EEFB; padding:20px 0 0;">
-
-                  <!-- BLUE HEADER (REDUCED PADDING) -->
-                  <table width="600" cellpadding="0" cellspacing="0" border="0"
-                    style="background:#003A77; border-radius:6px 6px 0 0; color:#fff;">
-                    
-                    <tr>
-                      <td align="center" style="padding:20px 24px;">
-                        <img 
-                          src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1793946695/indimet_LOGO_cusfu7.png"
-                          style="max-width:180px; display:block; margin:0 auto;"
-                          alt="IndiaMET 2027 Logo"
-                        />
-                        <p style="margin:6px 0 0; font-size:13px; color:#ffffff; font-weight:600;">
-                          India's Dedicated Industrial Metrology Exhibition And Summit
-                        </p>
-                      </td>
-                    </tr>
-
-                  </table>
-
-                </td>
-              </tr>
-
-              <!-- WHITE CARD BODY -->
-              <tr>
-                <td align="center">
-
-                  <table width="600" cellpadding="0" cellspacing="0" border="0"
-                    style="background:#ffffff; border-radius:0 0 6px 6px;">
-
-                    <!-- CONTENT -->
-                    <tr>
-                      <td style="padding:30px; color:#333; text-align:center;">
-
-                        <h2 style="margin-bottom:10px; color:#003A77;">Visitor Registration Confirmed!</h2>
-                        <hr style="border:none; border-top:1px solid #ddd; width:80%; margin:10px auto 20px;" />
-
-                        <p style="text-align:left; font-size:16px;">
-                          Dear ${[data.firstName, data.lastName].filter(Boolean).join(" ").trim() || data.name || data.contactPerson || 'Valued Visitor'},
-                        </p>
-
-                        <p style="text-align:left; font-size:16px;">
-                          Thank you for registering to attend <strong>IndiaMET 2027</strong>.<br/>
-                          Below are your registration details and visitor badge:
-                        </p>
-
-                        ${renderDetailsCard(data)}
-
-                        <!-- QR CODE BADGE -->
-                        <div style="margin:25px 0; text-align:center;">
-                          <div style="background:#fff; padding:20px; border-radius:12px; display:inline-block; box-shadow:0 2px 8px rgba(0,0,0,0.1); border:1px solid #CBD5E1;">
-                            <img src="cid:qrcode_${visitorCode}" alt="Visitor QR Code" width="200" height="200" style="width:200px; height:200px; display:block; margin:0 auto;" />
-                            <p style="margin-top:15px; font-size:14px; font-weight:bold; color:#003A77;">IndiaMET 2027 Visitor Pass</p>
-                            <p style="margin:5px 0; font-size:12px; color:#666;">${[data.firstName, data.lastName].filter(Boolean).join(" ").trim() || data.name || data.contactPerson || ''}</p>
-                            <p style="margin:5px 0; font-size:12px; color:#666; font-weight:bold;">Code: ${visitorCode}</p>
-                            <p style="margin:8px 0 0; font-size:12px; color:#003A77;">Scan this code to view the visitor details.</p>
-                          </div>
-                        </div>
-
-                        <!-- BUTTON - Download link -->
-                        <div style="margin:25px 0;">
-                          <a href="${badgeDownloadUrl}"
-                             style="
-                               background:#003A77;
-                               color:#ffffff;
-                               padding:14px 34px;
-                               text-decoration:none;
-                               border-radius:30px;
-                               font-size:15px;
-                               display:inline-block;
-                               font-weight:bold;
-                               cursor:pointer;
-                             ">
-                            Download Badge
-                          </a>
-                          <p style="font-size:12px; color:#666; margin-top:10px;">
-                            Click the button above to download your visitor badge with QR code.
-                          </p>
-                        </div>
-
-                        <div style="margin-top:15px; font-size:15px; font-weight:bold; padding:10px; background:#f5f5f5; border-radius:5px; color:#003A77;">
-                          Visitor Code: ${visitorCode}
-                        </div>
-
-                        <p style="font-size:15px; margin-top:20px;">
-                          We look forward to seeing you at the event.
-                        </p>
-
-                        <p style="font-size:13px; color:#666;">
-                          If you have any questions, feel free to contact us.
-                        </p>
-
-                        <p style="text-align:left; margin-top:20px;">
-                          Best regards,<br/>
-                          <strong>IndiaMET 2027 Team</strong>
-                        </p>
-
-                      </td>
-                    </tr>
-
-                    <!-- FOOTER -->
-                    <tr>
-                      <td style="background:#003A77; color:#fff; padding:15px; text-align:center; font-size:14px;">
-                        <strong>13-15 May 2027</strong> • Auto Cluster Exhibition Centre, Pune, India
-                      </td>
-                    </tr>
-
-                    <tr>
-                      <td style="background:#E6EEF7; padding:20px; font-size:12px; color:#333; text-align:center;">
-                        Organizer: <img 
-                          src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774687173/maxxlogo_lulkwh.png"
-                          style="max-width:180px; display:block; margin:0 auto;"
-                          alt="Maxx Business Media Logo"
-                        /><br/>
-                        T9, Swastik Manandi Arcade, Bengaluru, India<br/>
-                        Tel: +91 91483 19993 | pad@maxxmedia.in | www.indiametexpo.com
-                      </td>
-                    </tr>
-
-                  </table>
-
-                </td>
-              </tr>
-
-            </table>
-
-          </body>
-          </html>
-        `;
+            <div style="margin-top:15px; font-size:15px; font-weight:bold; padding:10px; background:#f5f5f5; border-radius:5px; color:#003A77; text-align:center;">
+              Visitor Code: ${visitorCode}
+            </div>
+          `
+        });
         break;
 
       case "exhibitor-enquiry":
         subject = "Your Exhibitor Enquiry - IndiaMET 2027";
-        html = `
-          <!DOCTYPE html>
-          <html>
-          <body style="margin:0; padding:0; background:#f2f2f2; font-family:Arial, sans-serif;">
-
-            <table width="100%" cellpadding="0" cellspacing="0" border="0">
-
-              <!-- TOP COLOR BACKGROUND (REDUCED) -->
-              <tr>
-                <td align="center" style="background:#D7EEFB; padding:20px 0 0;">
-
-                  <!-- BLUE HEADER (REDUCED PADDING) -->
-                  <table width="600" cellpadding="0" cellspacing="0" border="0"
-                    style="background:#003A77; border-radius:6px 6px 0 0; color:#fff;">
-                    
-                    <tr>
-                      <td align="center" style="padding:20px 24px;">
-                        <img 
-                          src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1793946695/indimet_LOGO_cusfu7.png"
-                          style="max-width:180px; display:block; margin:0 auto;"
-                          alt="IndiaMET 2027 Logo"
-                        />
-                        <p style="margin:6px 0 0; font-size:13px; color:#ffffff; font-weight:600;">
-                          India's Dedicated Industrial Metrology Exhibition And Summit
-                        </p>
-                      </td>
-                    </tr>
-
-                  </table>
-
-                </td>
-              </tr>
-
-              <!-- WHITE CARD BODY -->
-              <tr>
-                <td align="center">
-
-                  <table width="600" cellpadding="0" cellspacing="0" border="0"
-                    style="background:#ffffff; border-radius:0 0 6px 6px;">
-
-                    <!-- CONTENT -->
-                    <tr>
-                      <td style="padding:30px; color:#333;">
-
-                        <p style="font-size:16px;">
-                          Dear ${[data.firstName, data.lastName].filter(Boolean).join(" ").trim() || data.name || data.contactPerson || 'Valued Exhibitor'},
-                        </p>
-
-                        <p style="font-size:16px; line-height:1.6;">
-                          Thank you for your enquiry about exhibiting at <strong>IndiaMET 2027 – Dedicated Industrial Metrology Exhibition &amp; Summit</strong>.
-                        </p>
-
-                        <p style="font-size:16px;">
-                          We have received your exhibiting enquiry details as follows:
-                        </p>
-
-                        ${renderDetailsCard(data)}
-
-                        <p style="font-size:15px; line-height:1.6;">
-                          Our exhibition sales team will get in touch with you shortly to discuss booth space options, floor plan availability, and provide full participation packages.
-                        </p>
-
-                        <p style="font-size:15px;">
-                          We look forward to the opportunity to collaborate with you at 
-                          <strong style="color:#003A77;">IndiaMET 2027!</strong>
-                        </p>
-
-                        <p style="margin-top:20px;">
-                          Best regards,<br/>
-                          <strong style="color:#003A77;">IndiaMET 2027 Exhibition Team</strong>
-                        </p>
-
-                      </td>
-                    </tr>
-
-                    <!-- FOOTER -->
-                    <tr>
-                      <td style="background:#003A77; color:#fff; padding:15px; text-align:center; font-size:14px;">
-                        <strong>13-15 May 2027</strong> • Auto Cluster Exhibition Centre, Pune, India
-                      </td>
-                    </tr>
-
-                    <tr>
-                      <td style="background:#E6EEF7; padding:20px; font-size:12px; color:#333; text-align:center;">
-                        Organizer: <img 
-                          src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774687173/maxxlogo_lulkwh.png"
-                          style="max-width:180px; display:block; margin:0 auto;"
-                          alt="Maxx Business Media Logo"
-                        /><br/>
-                        T9, Swastik Manandi Arcade, Bengaluru, India<br/>
-                        Tel: +91 91483 19993 | pad@maxxmedia.in | www.indiametexpo.com
-                      </td>
-                    </tr>
-
-                  </table>
-
-                </td>
-              </tr>
-
-            </table>
-
-          </body>
-          </html>
-        `;
+        html = generateUserEmailTemplate({
+          name: userName,
+          actionText: "exhibiting at",
+          teamName: "Exhibition Team",
+          detailsCardHtml: renderDetailsCard(data)
+        });
         break;
 
       case "delegate-registration":
         subject = "Delegate Registration Confirmed - IndiaMET 2027";
-        html = `
-          <!DOCTYPE html>
-          <html>
-          <body style="margin:0; padding:0; background:#f2f2f2; font-family:Arial, sans-serif;">
+        html = generateUserEmailTemplate({
+          name: userName,
+          actionText: "attending as a delegate at",
+          teamName: "Delegate Registration Team",
+          detailsCardHtml: renderDetailsCard(data),
+          extraContent: `
+            <!-- QR CODE BADGE -->
+            <div style="margin:25px 0; text-align:center;">
+              <div style="background:#fff; padding:20px; border-radius:12px; display:inline-block; box-shadow:0 2px 8px rgba(0,0,0,0.1); border:1px solid #CBD5E1;">
+                <img src="cid:qrcode_${visitorCode}" alt="Delegate QR Code" width="200" height="200" style="width:200px; height:200px; display:block; margin:0 auto;" />
+                <p style="margin-top:15px; font-size:14px; font-weight:bold; color:#003A77;">IndiaMET 2027 Delegate Pass</p>
+                <p style="margin:5px 0; font-size:12px; color:#666;">${userName}</p>
+                <p style="margin:5px 0; font-size:12px; color:#666; font-weight:bold;">Code: ${visitorCode}</p>
+                <p style="margin:8px 0 0; font-size:12px; color:#003A77;">Scan this code to view the delegate details.</p>
+              </div>
+            </div>
 
-            <table width="100%" cellpadding="0" cellspacing="0" border="0">
+            <!-- BUTTON - Download link -->
+            <div style="margin:25px 0; text-align:center;">
+              <a href="${badgeDownloadUrl}"
+                 style="
+                   background:#003A77;
+                   color:#ffffff;
+                   padding:14px 34px;
+                   text-decoration:none;
+                   border-radius:30px;
+                   font-size:15px;
+                   display:inline-block;
+                   font-weight:bold;
+                   cursor:pointer;
+                 ">
+                Download Badge
+              </a>
+              <p style="font-size:12px; color:#666; margin-top:10px;">
+                Click the button above to download your delegate badge with QR code.
+              </p>
+            </div>
 
-              <!-- TOP COLOR BACKGROUND (REDUCED) -->
-              <tr>
-                <td align="center" style="background:#D7EEFB; padding:20px 0 0;">
-
-                  <!-- BLUE HEADER (REDUCED PADDING) -->
-                  <table width="600" cellpadding="0" cellspacing="0" border="0"
-                    style="background:#003A77; border-radius:6px 6px 0 0; color:#fff;">
-                    
-                    <tr>
-                      <td align="center" style="padding:20px 24px;">
-                        <img 
-                          src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1793946695/indimet_LOGO_cusfu7.png"
-                          style="max-width:180px; display:block; margin:0 auto;"
-                          alt="IndiaMET 2027 Logo"
-                        />
-                        <p style="margin:6px 0 0; font-size:13px; color:#ffffff; font-weight:600;">
-                          India's Dedicated Industrial Metrology Exhibition And Summit
-                        </p>
-                      </td>
-                    </tr>
-
-                  </table>
-
-                </td>
-              </tr>
-
-              <!-- WHITE CARD BODY -->
-              <tr>
-                <td align="center">
-
-                  <table width="600" cellpadding="0" cellspacing="0" border="0"
-                    style="background:#ffffff; border-radius:0 0 6px 6px;">
-
-                    <tr>
-                      <td style="padding:30px; text-align:center; color:#333;">
-
-                        <h2 style="margin-bottom:10px; color:#003A77;">Delegate Registration Confirmed!</h2>
-                        <hr style="border:none; border-top:1px solid #ddd; width:80%; margin:10px auto 20px;" />
-
-                        <p style="text-align:left; font-size:16px;">
-                          Dear ${[data.firstName, data.lastName].filter(Boolean).join(" ").trim() || data.name || data.contactPerson || 'Valued Delegate'},
-                        </p>
-
-                        <p style="text-align:left; font-size:16px;">
-                          Thank you for registering to attend 
-                          <strong>IndiaMET 2027 Conference</strong>.<br/>
-                          Below are your registration details and delegate pass:
-                        </p>
-
-                        ${renderDetailsCard(data)}
-
-                        <div style="margin:25px 0; text-align:center;">
-                          <div style="background:#fff; padding:20px; border-radius:12px; display:inline-block; box-shadow:0 2px 8px rgba(0,0,0,0.1); border:1px solid #CBD5E1;">
-                            <img src="cid:qrcode_${visitorCode}" alt="Delegate QR Code" width="200" height="200" style="width:200px; height:200px; display:block; margin:0 auto;" />
-                            <p style="margin-top:15px; font-size:14px; font-weight:bold; color:#003A77;">IndiaMET 2027 Delegate Pass</p>
-                            <p style="margin:5px 0; font-size:12px; color:#666;">${[data.firstName, data.lastName].filter(Boolean).join(" ").trim() || data.name || data.contactPerson || ''}</p>
-                            <p style="margin:5px 0; font-size:12px; color:#666; font-weight:bold;">Code: ${visitorCode}</p>
-                            <p style="margin:8px 0 0; font-size:12px; color:#003A77;">Scan this code to view the delegate details.</p>
-                          </div>
-                        </div>
-
-                        <!-- BUTTON - Download link -->
-                        <div style="margin:25px 0;">
-                          <a href="${badgeDownloadUrl}"
-                             style="
-                               background:#003A77;
-                               color:#ffffff;
-                               padding:14px 34px;
-                               text-decoration:none;
-                               border-radius:30px;
-                               font-size:15px;
-                               display:inline-block;
-                               font-weight:bold;
-                               cursor:pointer;
-                             ">
-                            Download Badge
-                          </a>
-                          <p style="font-size:12px; color:#666; margin-top:10px;">
-                            Click the button above to download your delegate badge with QR code.
-                          </p>
-                        </div>
-
-                        <div style="margin-top:15px; font-size:15px; font-weight:bold; padding:10px; background:#f5f5f5; border-radius:5px; color:#003A77;">
-                          Delegate Code: ${visitorCode}
-                        </div>
-
-                        <p style="margin-top:20px; font-size:15px;">We look forward to seeing you at the event.</p>
-
-                        <p style="font-size:13px; color:#666;">
-                          If you have any questions, feel free to contact us.
-                        </p>
-
-                        <p style="text-align:left; margin-top:20px;">
-                          Best regards,<br/>
-                          <strong>IndiaMET 2027 Team</strong>
-                        </p>
-
-                      </td>
-                    </tr>
-
-                    <!-- FOOTER -->
-                    <tr>
-                      <td style="background:#003A77; color:#fff; padding:15px; text-align:center; font-size:14px;">
-                        <strong>13-15 May 2027</strong> • Auto Cluster Exhibition Centre, Pune, India
-                      </td>
-                    </tr>
-
-                    <tr>
-                      <td style="background:#E6EEF7; padding:20px; font-size:12px; color:#333; text-align:center;">
-                        Organizer: <img 
-                          src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774687173/maxxlogo_lulkwh.png"
-                          style="max-width:180px; display:block; margin:0 auto;"
-                          alt="Maxx Business Media Logo"
-                        /><br/>
-                        T9, Swastik Manandi Arcade, Bengaluru, India<br/>
-                        Tel: +91 91483 19993 | pad@maxxmedia.in | www.indiametexpo.com
-                      </td>
-                    </tr>
-
-                  </table>
-
-                </td>
-              </tr>
-
-            </table>
-
-          </body>
-          </html>
-        `;
+            <div style="margin-top:15px; font-size:15px; font-weight:bold; padding:10px; background:#f5f5f5; border-radius:5px; color:#003A77; text-align:center;">
+              Delegate Code: ${visitorCode}
+            </div>
+          `
+        });
         break;
 
       case "sponsor-registration":
       case "partner-registration":
         subject = "Your Sponsorship & Partner Registration - IndiaMET 2027";
-        html = `
-          <!DOCTYPE html>
-          <html>
-          <body style="margin:0; padding:0; background:#f2f2f2; font-family:Arial, sans-serif;">
+        html = generateUserEmailTemplate({
+          name: userName,
+          actionText: "sponsoring and partnering with",
+          teamName: "Sponsorship & Partnerships Team",
+          detailsCardHtml: renderSponsorDetailsCard(data),
+          headerBg: "#F5F3FF",
+          primaryColor: "#6B21A8",
+          footerOrgBg: "#F5F3FF"
+        });
+        break;
 
-            <table width="100%" cellpadding="0" cellspacing="0" border="0">
-
-              <!-- TOP COLOR BACKGROUND (REDUCED PURPLE TINT - NOT MET BLUE) -->
-              <tr>
-                <td align="center" style="background:#F5F3FF; padding:20px 0 0;">
-
-                  <!-- PURPLE HEADER (DISTINCTIVE FROM MET BLUE) -->
-                  <table width="600" cellpadding="0" cellspacing="0" border="0"
-                    style="background:linear-gradient(135deg, #581C87 0%, #7E22CE 100%); border-radius:6px 6px 0 0; color:#fff;">
-                    
-                    <tr>
-                      <td align="center" style="padding:20px 24px;">
-                        <img 
-                          src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1793946695/indimet_LOGO_cusfu7.png"
-                          style="max-width:180px; display:block; margin:0 auto;"
-                          alt="IndiaMET 2027 Logo"
-                        />
-                        <p style="margin:6px 0 0; font-size:13px; color:#ffffff; font-weight:600;">
-                          India's Dedicated Industrial Metrology Exhibition And Summit
-                        </p>
-                        <p style="margin:4px 0 0; font-size:11px; color:#E9D5FF; text-transform:uppercase; letter-spacing:1px; font-weight:bold;">
-                          Sponsorship &amp; Partnership Programme
-                        </p>
-                      </td>
-                    </tr>
-
-                  </table>
-
-                </td>
-              </tr>
-
-              <!-- WHITE CARD BODY -->
-              <tr>
-                <td align="center">
-
-                  <table width="600" cellpadding="0" cellspacing="0" border="0"
-                    style="background:#ffffff; border-radius:0 0 6px 6px;">
-
-                    <!-- CONTENT -->
-                    <tr>
-                      <td style="padding:30px; color:#333;">
-
-                        <h2 style="margin-bottom:10px; color:#581C87; text-align:center;">Sponsorship &amp; Partner Registration Confirmed! 🤝</h2>
-                        <hr style="border:none; border-top:1px solid #E9D5FF; width:80%; margin:10px auto 20px;" />
-
-                        <p style="font-size:16px;">
-                          Dear ${[data.firstName, data.lastName].filter(Boolean).join(" ").trim() || data.name || data.contactPerson || 'Valued Partner'},
-                        </p>
-
-                        <p style="font-size:16px; line-height:1.6;">
-                          Thank you for your interest in partnering with and sponsoring <strong>IndiaMET 2027 – Dedicated Industrial Metrology Exhibition &amp; Summit</strong>.
-                          Below are your registration details:
-                        </p>
-
-                        ${renderSponsorDetailsCard(data)}
-
-                        <div style="background:#FAF5FF; border-left:4px solid #7E22CE; padding:18px 20px; margin:22px 0; border-radius:6px; font-size:14px; line-height:1.6;">
-                          <strong style="color:#581C87; font-size:15px;">🤝 Sponsor &amp; Partner Next Steps:</strong>
-                          <ul style="margin:8px 0 0; padding-left:20px; color:#4B5563;">
-                            <li>Our partnership management team will review your application within 1-2 business days.</li>
-                            <li>You will receive an email with official IndiaMET 2027 partner branding guidelines and deliverables.</li>
-                            <li>A dedicated account manager will be assigned to assist your team with customized booth placement and branding.</li>
-                            <li>We will schedule a briefing call to align on promotional timelines and VIP delegate passes.</li>
-                          </ul>
-                        </div>
-
-                        <p style="font-size:14px; color:#666;">
-                          If you have any questions, feel free to contact us at pad@maxxmedia.in.
-                        </p>
-
-                        <p style="margin-top:20px;">
-                          Best regards,<br/>
-                          <strong style="color:#6B21A8;">IndiaMET 2027 Sponsorship &amp; Partnerships Team</strong>
-                        </p>
-
-                      </td>
-                    </tr>
-
-                    <!-- FOOTER -->
-                    <tr>
-                      <td style="background:#581C87; color:#fff; padding:15px; text-align:center; font-size:14px;">
-                        <strong>13-15 May 2027</strong> • Auto Cluster Exhibition Centre, Pune, India
-                      </td>
-                    </tr>
-
-                    <tr>
-                      <td style="background:#F5F3FF; padding:20px; font-size:12px; color:#333; text-align:center;">
-                        Organizer: <img 
-                          src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774687173/maxxlogo_lulkwh.png"
-                          style="max-width:180px; display:block; margin:0 auto;"
-                          alt="Maxx Business Media Logo"
-                        /><br/>
-                        T9, Swastik Manandi Arcade, Bengaluru, India<br/>
-                        Tel: +91 91483 19993 | pad@maxxmedia.in | www.indiametexpo.com
-                      </td>
-                    </tr>
-
-                  </table>
-
-                </td>
-              </tr>
-
-            </table>
-
-          </body>
-          </html>
-        `;
+      case "award-nomination":
+      case "awards-registration":
+      case "award-registration":
+      case "nomination":
+      case "awards":
+        subject = "Award Nomination Confirmed - IndiaMET 2027";
+        html = generateUserEmailTemplate({
+          name: userName,
+          actionText: "submitting your nomination for",
+          teamName: "Awards Team",
+          detailsCardHtml: renderDetailsCard(data)
+        });
         break;
 
       default:
-        subject = "Your Form Submission - IndiaMet 2027";
-        html = `
-          <h2>Thank you for your submission</h2>
-          <p>Dear ${data.firstName || 'Valued Customer'},</p>
-          <p>We have received your form submission. Here's what you submitted:</p>
-          <hr/>
-          ${Object.entries(data)
-            .filter(([key]) => !['captchaToken', 'submittedAt'].includes(key))
-            .map(([key, value]) => `<p><strong>${key}:</strong> ${Array.isArray(value) ? value.join(', ') : value || 'Not provided'}</p>`)
-            .join('')}
-          <hr/>
-          <p>Our team will review your submission and get back to you shortly.</p>
-        `;
+        subject = "Your Form Submission - IndiaMET 2027";
+        html = generateUserEmailTemplate({
+          name: userName,
+          actionText: "submitting your enquiry to",
+          teamName: "Team",
+          detailsCardHtml: renderDetailsCard(data)
+        });
     }
 
     // Validate email before sending
@@ -1531,6 +1042,21 @@ router.post("/", async (req, res) => {
             lightBg: "#FFFFFF",
             stripColor: "#7E22CE",
             titleColor: "#581C87",
+            data
+          });
+          break;
+
+        case "award-nomination":
+        case "awards-registration":
+        case "award-registration":
+        case "nomination":
+        case "awards":
+          adminSubject = "New Award Nomination - IndiaMET 2027";
+          adminHtml = generateInwardTemplate({
+            title: "New Award Nomination !",
+            lightBg: "#FFFFFF",
+            stripColor: "#00A1B1",
+            titleColor: "#003A77",
             data
           });
           break;
