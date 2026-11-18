@@ -228,6 +228,52 @@ function renderDetailsCard(data = {}) {
   `;
 }
 
+function renderSponsorDetailsCard(data = {}) {
+  const name = [data.firstName, data.lastName].filter(Boolean).join(" ").trim() || data.name || data.contactPerson || "Not provided";
+  const company = data.companyName || data.company || "Not provided";
+  const jobTitle = data.jobTitle || data.designation || "Not provided";
+  const phone = data.phone || data.mobile || "Not provided";
+  const email = data.email || "Not provided";
+  const address = [data.address, data.city, data.state, data.country, data.pincode].filter(Boolean).join(", ") || data.address || data.city || "Not provided";
+  const partnershipType = data.partnershipType ? data.partnershipType.charAt(0).toUpperCase() + data.partnershipType.slice(1) : (data.sponsorshipType || null);
+
+  return `
+    <table width="100%" cellpadding="8" cellspacing="0" 
+      style="background:#FAF5FF; margin:20px 0; border:1px solid #E9D5FF; border-radius:6px; border-collapse:collapse; font-size:14px; text-align:left;">
+      <tr>
+        <td width="35%" style="border-bottom:1px solid #E9D5FF; color:#6B21A8; padding:8px 12px;"><strong>Name</strong></td>
+        <td style="border-bottom:1px solid #E9D5FF; font-weight:600; color:#1e293b; padding:8px 12px;">: ${name}</td>
+      </tr>
+      <tr>
+        <td style="border-bottom:1px solid #E9D5FF; color:#6B21A8; padding:8px 12px;"><strong>Company</strong></td>
+        <td style="border-bottom:1px solid #E9D5FF; color:#1e293b; padding:8px 12px;">: ${company}</td>
+      </tr>
+      <tr>
+        <td style="border-bottom:1px solid #E9D5FF; color:#6B21A8; padding:8px 12px;"><strong>Job Title</strong></td>
+        <td style="border-bottom:1px solid #E9D5FF; color:#1e293b; padding:8px 12px;">: ${jobTitle}</td>
+      </tr>
+      <tr>
+        <td style="border-bottom:1px solid #E9D5FF; color:#6B21A8; padding:8px 12px;"><strong>Phone Number</strong></td>
+        <td style="border-bottom:1px solid #E9D5FF; color:#1e293b; padding:8px 12px;">: ${phone}</td>
+      </tr>
+      <tr>
+        <td style="border-bottom:1px solid #E9D5FF; color:#6B21A8; padding:8px 12px;"><strong>Email</strong></td>
+        <td style="border-bottom:1px solid #E9D5FF; color:#1e293b; padding:8px 12px;">: ${email}</td>
+      </tr>
+      <tr>
+        <td style="${partnershipType ? 'border-bottom:1px solid #E9D5FF;' : ''} color:#6B21A8; padding:8px 12px;"><strong>Address</strong></td>
+        <td style="${partnershipType ? 'border-bottom:1px solid #E9D5FF;' : ''} color:#1e293b; padding:8px 12px;">: ${address}</td>
+      </tr>
+      ${partnershipType ? `
+      <tr>
+        <td style="color:#6B21A8; padding:8px 12px;"><strong>Partnership Type</strong></td>
+        <td style="color:#1e293b; font-weight:600; padding:8px 12px;">: ${partnershipType}</td>
+      </tr>
+      ` : ''}
+    </table>
+  `;
+}
+
 function generateInwardTemplate({
   title,
   lightBg = "#FFFFFF",
@@ -259,7 +305,12 @@ function generateInwardTemplate({
     'phone', 'mobile',
     'email',
     'address', 'city', 'state', 'country', 'pincode', 'postalCode',
-    'captchaToken', 'submittedAt', 'standSize', 'spaceRequirement', 'interestLevel'
+    'captchaToken', 'submittedAt', 'standSize', 'spaceRequirement', 'interestLevel',
+    'marketingConsent', 'privacyConsent', 'consent', 'marketing',
+    'gstin', 'GSTIN',
+    'utmSource', 'utmMedium', 'utmCampaign', 'utmTerm', 'utmContent', 'utmId',
+    'referrer', 'landingPage', 'utmTimestamp',
+    'cmsCampaignId', 'cmsCampaignName', 'cmsCampaignSource', 'cmsCampaignMedium'
   ]);
 
   const extraFields = Object.entries(data)
@@ -1243,8 +1294,9 @@ router.post("/", async (req, res) => {
         `;
         break;
 
+      case "sponsor-registration":
       case "partner-registration":
-        subject = "Your Partner Registration Confirmation - IndiaMET 2027";
+        subject = "Your Sponsorship & Partner Registration - IndiaMET 2027";
         html = `
           <!DOCTYPE html>
           <html>
@@ -1252,13 +1304,13 @@ router.post("/", async (req, res) => {
 
             <table width="100%" cellpadding="0" cellspacing="0" border="0">
 
-              <!-- TOP COLOR BACKGROUND (REDUCED) -->
+              <!-- TOP COLOR BACKGROUND (REDUCED PURPLE TINT - NOT MET BLUE) -->
               <tr>
-                <td align="center" style="background:#D7EEFB; padding:20px 0 0;">
+                <td align="center" style="background:#F5F3FF; padding:20px 0 0;">
 
-                  <!-- BLUE HEADER (REDUCED PADDING) -->
+                  <!-- PURPLE HEADER (DISTINCTIVE FROM MET BLUE) -->
                   <table width="600" cellpadding="0" cellspacing="0" border="0"
-                    style="background:#003A77; border-radius:6px 6px 0 0; color:#fff;">
+                    style="background:linear-gradient(135deg, #581C87 0%, #7E22CE 100%); border-radius:6px 6px 0 0; color:#fff;">
                     
                     <tr>
                       <td align="center" style="padding:20px 24px;">
@@ -1269,6 +1321,9 @@ router.post("/", async (req, res) => {
                         />
                         <p style="margin:6px 0 0; font-size:13px; color:#ffffff; font-weight:600;">
                           India's Dedicated Industrial Metrology Exhibition And Summit
+                        </p>
+                        <p style="margin:4px 0 0; font-size:11px; color:#E9D5FF; text-transform:uppercase; letter-spacing:1px; font-weight:bold;">
+                          Sponsorship &amp; Partnership Programme
                         </p>
                       </td>
                     </tr>
@@ -1289,26 +1344,27 @@ router.post("/", async (req, res) => {
                     <tr>
                       <td style="padding:30px; color:#333;">
 
-                        <h2 style="margin-bottom:10px; color:#003A77; text-align:center;">Partner Registration Confirmed! 🤝</h2>
-                        <hr style="border:none; border-top:1px solid #ddd; width:80%; margin:10px auto 20px;" />
+                        <h2 style="margin-bottom:10px; color:#581C87; text-align:center;">Sponsorship &amp; Partner Registration Confirmed! 🤝</h2>
+                        <hr style="border:none; border-top:1px solid #E9D5FF; width:80%; margin:10px auto 20px;" />
 
                         <p style="font-size:16px;">
                           Dear ${[data.firstName, data.lastName].filter(Boolean).join(" ").trim() || data.name || data.contactPerson || 'Valued Partner'},
                         </p>
 
                         <p style="font-size:16px; line-height:1.6;">
-                          Thank you for registering as a partner for <strong>IndiaMET 2027 – Dedicated Industrial Metrology Exhibition &amp; Summit</strong>.
+                          Thank you for your interest in partnering with and sponsoring <strong>IndiaMET 2027 – Dedicated Industrial Metrology Exhibition &amp; Summit</strong>.
                           Below are your registration details:
                         </p>
 
-                        ${renderDetailsCard(data)}
+                        ${renderSponsorDetailsCard(data)}
 
-                        <div style="background:#F1F8FB; border-left:4px solid #00A1B1; padding:15px; margin:20px 0; border-radius:4px; font-size:14px; line-height:1.6;">
-                          <strong style="color:#003A77;">🤝 Partner Next Steps:</strong>
-                          <ul style="margin:8px 0 0; padding-left:20px; color:#4a5568;">
-                            <li>Our partnership team will review your application within 2-3 business days.</li>
-                            <li>You will receive an email with partner branding guidelines and entitlements.</li>
-                            <li>A dedicated account manager will be assigned to assist your team.</li>
+                        <div style="background:#FAF5FF; border-left:4px solid #7E22CE; padding:18px 20px; margin:22px 0; border-radius:6px; font-size:14px; line-height:1.6;">
+                          <strong style="color:#581C87; font-size:15px;">🤝 Sponsor &amp; Partner Next Steps:</strong>
+                          <ul style="margin:8px 0 0; padding-left:20px; color:#4B5563;">
+                            <li>Our partnership management team will review your application within 1-2 business days.</li>
+                            <li>You will receive an email with official IndiaMET 2027 partner branding guidelines and deliverables.</li>
+                            <li>A dedicated account manager will be assigned to assist your team with customized booth placement and branding.</li>
+                            <li>We will schedule a briefing call to align on promotional timelines and VIP delegate passes.</li>
                           </ul>
                         </div>
 
@@ -1318,7 +1374,7 @@ router.post("/", async (req, res) => {
 
                         <p style="margin-top:20px;">
                           Best regards,<br/>
-                          <strong style="color:#003A77;">IndiaMET 2027 Partnership Team</strong>
+                          <strong style="color:#6B21A8;">IndiaMET 2027 Sponsorship &amp; Partnerships Team</strong>
                         </p>
 
                       </td>
@@ -1326,13 +1382,13 @@ router.post("/", async (req, res) => {
 
                     <!-- FOOTER -->
                     <tr>
-                      <td style="background:#003A77; color:#fff; padding:15px; text-align:center; font-size:14px;">
+                      <td style="background:#581C87; color:#fff; padding:15px; text-align:center; font-size:14px;">
                         <strong>13-15 May 2027</strong> • Auto Cluster Exhibition Centre, Pune, India
                       </td>
                     </tr>
 
                     <tr>
-                      <td style="background:#E6EEF7; padding:20px; font-size:12px; color:#333; text-align:center;">
+                      <td style="background:#F5F3FF; padding:20px; font-size:12px; color:#333; text-align:center;">
                         Organizer: <img 
                           src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774687173/maxxlogo_lulkwh.png"
                           style="max-width:180px; display:block; margin:0 auto;"
@@ -1464,6 +1520,18 @@ router.post("/", async (req, res) => {
             stripColor: "#00A1B1",
             titleColor: "#003A77",
             data: { ...data, visitorCode: visitorCode || 'N/A' }
+          });
+          break;
+
+        case "sponsor-registration":
+        case "partner-registration":
+          adminSubject = "New Sponsor / Partner Registration - IndiaMet 2027";
+          adminHtml = generateInwardTemplate({
+            title: "New Sponsor / Partner Registration !",
+            lightBg: "#FFFFFF",
+            stripColor: "#7E22CE",
+            titleColor: "#581C87",
+            data
           });
           break;
 
