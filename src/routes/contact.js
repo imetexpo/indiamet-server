@@ -339,16 +339,26 @@ function generateUserEmailTemplate({
             </td>
           </tr>
 
-          <!-- FOOTER: ORGANIZER -->
+          <!-- FOOTER: ORGANIZER (LEFT LOGO, RIGHT END ADDRESS) -->
           <tr>
-            <td style="background:${footerOrgBg}; padding:20px; font-size:12px; color:#333; text-align:center; line-height:1.6;">
-              Organizer: <img 
-                src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774687173/maxxlogo_lulkwh.png"
-                style="max-width:180px; display:block; margin:8px auto;"
-                alt="Maxx Business Media Logo"
-              /><br/>
-              T9, Swastik Manandi Arcade, Bengaluru, India<br/>
-              Tel: +91 91483 19993 | pad@maxxmedia.in | www.indiametexpo.com
+            <td style="background:${footerOrgBg}; padding:20px; font-size:12px; color:#333;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td width="38%" align="left" valign="middle">
+                    <span style="font-size:11px; color:#666; font-weight:bold; text-transform:uppercase; display:block; margin-bottom:6px;">Organized By:</span>
+                    <img 
+                      src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774687173/maxxlogo_lulkwh.png"
+                      style="max-width:140px; display:block;"
+                      alt="Maxx Business Media Logo"
+                    />
+                  </td>
+                  <td width="62%" align="right" valign="middle" style="font-size:12px; color:#333; line-height:1.6; text-align:right;">
+                    <strong>Maxx Business Media Pvt Ltd</strong><br/>
+                    T9, Swastik Manandi Arcade, Bengaluru, India<br/>
+                    Tel: +91 91483 19993 | pad@maxxmedia.in | www.indiametexpo.com
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
 
@@ -363,139 +373,239 @@ function generateUserEmailTemplate({
 
 function generateInwardTemplate({
   title,
-  lightBg = "#FFFFFF",
-  stripColor = "#003A77",
-  titleColor = "#003A77",
-  data = {},
-  includeSpace = false
+  formType = "",
+  data = {}
 }) {
-  const name = [data.firstName, data.lastName].filter(Boolean).join(" ").trim() || data.name || data.contactPerson || "Not provided";
-  const company = data.companyName || data.company || "Not provided";
-  const jobTitle = data.jobTitle || data.designation || "Not provided";
-  const phone = data.phone || data.mobile || "Not provided";
-  const email = data.email || "Not provided";
-  const address = [data.address, data.city, data.state, data.country, data.pincode].filter(Boolean).join(", ") || data.address || data.city || "Not provided";
-
-  const standardFields = [
-    ["Name", name],
-    ["Company", company],
-    ["Job Title", jobTitle],
-    ["Phone Number", phone],
-    ["Email", email],
-    ["Address", address]
+  const utmRows = [
+    ["utmSource", data.utmSource || data.utm_source || "N/A"],
+    ["utmMedium", data.utmMedium || data.utm_medium || "N/A"],
+    ["utmCampaign", data.utmCampaign || data.utm_campaign || "N/A"],
+    ["utmTerm", data.utmTerm || data.utm_term || "N/A"],
+    ["utmContent", data.utmContent || data.utm_content || "N/A"],
+    ["utmId", data.utmId || data.utm_id || "N/A"],
+    ["referrer", data.referrer || "N/A"],
+    ["landingPage", data.landingPage || "N/A"],
+    ["utmTimestamp", data.utmTimestamp || "N/A"],
+    ["cmsCampaignId", data.cmsCampaignId || "N/A"],
+    ["cmsCampaignName", data.cmsCampaignName || "N/A"],
+    ["cmsCampaignSource", data.cmsCampaignSource || "N/A"],
+    ["cmsCampaignMedium", data.cmsCampaignMedium || "N/A"],
   ];
 
-  const ignoredKeys = new Set([
-    'firstName', 'lastName', 'name', 'contactPerson',
-    'companyName', 'company',
-    'jobTitle', 'designation',
-    'phone', 'mobile',
-    'email',
-    'address', 'city', 'state', 'country', 'pincode', 'postalCode',
-    'captchaToken', 'submittedAt', 'standSize', 'spaceRequirement', 'interestLevel',
-    'marketingConsent', 'privacyConsent', 'consent', 'marketing',
-    'gstin', 'GSTIN',
-    'utmSource', 'utmMedium', 'utmCampaign', 'utmTerm', 'utmContent', 'utmId',
-    'referrer', 'landingPage', 'utmTimestamp',
-    'cmsCampaignId', 'cmsCampaignName', 'cmsCampaignSource', 'cmsCampaignMedium'
-  ]);
+  let fieldRows = [];
 
-  const extraFields = Object.entries(data)
-    .filter(([key]) => !ignoredKeys.has(key))
-    .map(([key, value]) => {
-      const formattedVal = Array.isArray(value) ? value.join(", ") : (value || "N/A");
-      return [key, formattedVal];
-    });
+  switch (formType) {
+    case "exhibitor-enquiry":
+      fieldRows = [
+        ["firstname", data.firstName || data.name?.split(" ")[0] || "Not provided"],
+        ["lastname", data.lastName || (data.name?.includes(" ") ? data.name.split(" ").slice(1).join(" ") : "") || "Not provided"],
+        ["companyname", data.companyName || data.company || "Not provided"],
+        ["jobtittle", data.jobTitle || data.designation || "Not provided"],
+        ["phone number", data.phone || data.mobile || "Not provided"],
+        ["website", data.companyWebsite || data.website || "N/A"],
+        ["address", data.address || "Not provided"],
+        ["country", data.country || "Not provided"],
+        ["state", data.state || "Not provided"],
+        ["city", data.city || "Not provided"],
+        ["pin", data.pincode || data.pin || data.postalCode || "Not provided"],
+        ["productsector", data.productSector || data.sector || data.industry || "N/A"],
+        ["inttestlevel", data.interestLevel || "N/A"],
+        ["message", data.message || data.comments || "N/A"],
+        ...utmRows
+      ];
+      break;
 
-  const allRows = [...standardFields, ...extraFields];
+    case "visitor-registration":
+      fieldRows = [
+        ["Full Name", [data.firstName, data.lastName].filter(Boolean).join(" ").trim() || data.name || data.fullName || "Not provided"],
+        ["companyname", data.companyName || data.company || "Not provided"],
+        ["Media", data.media || data.mediaPartner || data.isMedia || data.industry || "N/A"],
+        ["phone number", data.phone || data.mobile || "Not provided"],
+        ["website", data.website || data.companyWebsite || "N/A"],
+        ["address", data.address || "Not provided"],
+        ["country", data.country || "Not provided"],
+        ["state", data.state || "Not provided"],
+        ["city", data.city || "Not provided"],
+        ["pin", data.pincode || data.pin || data.postalCode || "Not provided"],
+        ["Visitorcode", data.visitorCode || "N/A"],
+        ["promocode", data.promocode || data.promoCode || "N/A"],
+        ...utmRows
+      ];
+      break;
 
-  const fields = allRows.map(([label, value]) => `
+    case "event-brochure":
+    case "post-show-report":
+      fieldRows = [
+        ["firstname", data.firstName || data.name?.split(" ")[0] || "Not provided"],
+        ["lastname", data.lastName || (data.name?.includes(" ") ? data.name.split(" ").slice(1).join(" ") : "") || "Not provided"],
+        ["companyname", data.companyName || data.company || "Not provided"],
+        ["jobtittle", data.jobTitle || data.designation || "Not provided"],
+        ["phone number", data.phone || data.mobile || "Not provided"],
+        ["website", data.website || data.companyWebsite || "N/A"],
+        ["address", data.address || "Not provided"],
+        ["country", data.country || "Not provided"],
+        ["state", data.state || "Not provided"],
+        ["city", data.city || "Not provided"],
+        ["pin", data.pincode || data.pin || data.postalCode || "Not provided"],
+        ["productsector", data.productSector || data.sector || data.industry || "N/A"],
+        ...utmRows
+      ];
+      break;
+
+    case "sponsor-registration":
+    case "partner-registration":
+      fieldRows = [
+        ["firstname", data.firstName || data.name?.split(" ")[0] || "Not provided"],
+        ["lastname", data.lastName || (data.name?.includes(" ") ? data.name.split(" ").slice(1).join(" ") : "") || "Not provided"],
+        ["companyname", data.companyName || data.company || "Not provided"],
+        ["jobtittle", data.jobTitle || data.designation || "Not provided"],
+        ["phone number", data.phone || data.mobile || "Not provided"],
+        ["website", data.website || data.companyWebsite || "N/A"],
+        ["address", data.address || "Not provided"],
+        ["country", data.country || "Not provided"],
+        ["state", data.state || "Not provided"],
+        ["city", data.city || "Not provided"],
+        ["pin", data.pincode || data.pin || data.postalCode || "Not provided"],
+        ["Partnership Type", data.partnershipType ? (data.partnershipType.charAt(0).toUpperCase() + data.partnershipType.slice(1)) : (data.sponsorshipType || "N/A")],
+        ...utmRows
+      ];
+      break;
+
+    case "delegate-registration":
+      fieldRows = [
+        ["Full Name", [data.firstName, data.lastName].filter(Boolean).join(" ").trim() || data.name || data.fullName || "Not provided"],
+        ["companyname", data.companyName || data.company || "Not provided"],
+        ["jobtittle", data.jobTitle || data.designation || "Not provided"],
+        ["phone number", data.phone || data.mobile || "Not provided"],
+        ["website", data.website || data.companyWebsite || "N/A"],
+        ["address", data.address || "Not provided"],
+        ["country", data.country || "Not provided"],
+        ["state", data.state || "Not provided"],
+        ["city", data.city || "Not provided"],
+        ["pin", data.pincode || data.pin || data.postalCode || "Not provided"],
+        ["Visitorcode", data.visitorCode || "N/A"],
+        ["promocode", data.promocode || data.promoCode || "N/A"],
+        ["Select Package", data.package || data.package || "N/A"],
+        ...utmRows
+      ];
+      break;
+
+    case "award-nomination":
+    case "awards-registration":
+    case "award-registration":
+    case "nomination":
+    case "awards":
+      fieldRows = [
+        ["firstname", data.firstName || data.name?.split(" ")[0] || "Not provided"],
+        ["lastname", data.lastName || (data.name?.includes(" ") ? data.name.split(" ").slice(1).join(" ") : "") || "Not provided"],
+        ["companyname", data.companyName || data.company || "Not provided"],
+        ["jobtittle", data.jobTitle || data.designation || "Not provided"],
+        ["phone number", data.phone || data.mobile || "Not provided"],
+        ["website", data.website || data.companyWebsite || "N/A"],
+        ["address", data.address || [data.city, data.state, data.country].filter(Boolean).join(", ") || "Not provided"],
+        ["country", data.country || "Not provided"],
+        ["state", data.state || "Not provided"],
+        ["city", data.city || "Not provided"],
+        ["pin", data.pincode || data.pin || data.postalCode || "Not provided"],
+        ["Award Category", data.awardCategory || data.category || "N/A"],
+        ["industry", data.industry || "N/A"],
+        ["message", data.message || data.achievements || "N/A"],
+        ...utmRows
+      ];
+      break;
+
+    default:
+      fieldRows = [
+        ["Name", [data.firstName, data.lastName].filter(Boolean).join(" ").trim() || data.name || data.contactPerson || "Not provided"],
+        ["Company", data.companyName || data.company || "Not provided"],
+        ["Job Title", data.jobTitle || data.designation || "Not provided"],
+        ["Phone Number", data.phone || data.mobile || "Not provided"],
+        ["Address", data.address || "Not provided"],
+        ...utmRows
+      ];
+  }
+
+  const tableRowsHtml = fieldRows.map(([label, value]) => `
     <tr>
-      <td width="35%" style="padding:7px 0; border-bottom:1px solid #E2E8F0; color:#003A77;"><strong>${label}</strong></td>
-      <td style="padding:7px 0; border-bottom:1px solid #E2E8F0; color:#1e293b;">: ${value}</td>
+      <td width="38%" style="padding:7px 10px; border-bottom:1px solid #E2E8F0; color:#003A77; font-weight:bold;">${label}</td>
+      <td style="padding:7px 10px; border-bottom:1px solid #E2E8F0; color:#1e293b;">: ${value}</td>
     </tr>
   `).join("");
 
   return `
-  <!DOCTYPE html>
-  <html>
-  <body style="margin:0; padding:0; background:#f2f2f2; font-family:Arial, sans-serif;">
-    
-    <table width="100%" cellpadding="0" cellspacing="0">
-      <tr>
-        <td align="center" style="padding:20px 0;">
-          <!-- CARD -->
-          <table width="600" cellpadding="0" cellspacing="0"
-            style="background:#FFFFFF; border-radius:6px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.1);">
+<!DOCTYPE html>
+<html>
+<body style="margin:0; padding:0; background:#f2f2f2; font-family:Arial, sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f2f2f2; padding:25px 0;">
+    <tr>
+      <td align="center">
+        <!-- CARD -->
+        <table width="600" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff; border-radius:8px; overflow:hidden; border:1px solid #E2E8F0; box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+          
+          <!-- 1. LOGO SECTION (bg-color - #F2F8FA) -->
+          <tr>
+            <td align="center" style="background:#F2F8FA; padding:25px 24px; border-bottom:1px solid #E2E8F0;">
+              <img 
+                src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1793946695/indimet_LOGO_cusfu7.png"
+                style="max-width:180px; display:block; margin:0 auto;"
+                alt="IndiaMET 2027 Logo"
+              />
+            </td>
+          </tr>
 
-            <!-- HEADER (REDUCED PADDING) -->
-            <tr>
-              <td style="background:#FFFFFF; padding:20px 24px; text-align:center;">
-                <img 
-                  src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1793946695/indimet_LOGO_cusfu7.png"
-                  style="max-width:180px; display:block; margin:0 auto;"
-                  alt="IndiaMet Logo"
-                />
-               </td>
-             </tr>
+          <!-- 2. REGISTRATION HEADER (bg color - #003A77, text-color - #ffffff) -->
+          <tr>
+            <td style="background:#003A77; color:#ffffff; text-align:center; padding:14px 20px; font-size:18px; font-weight:bold; letter-spacing:0.5px;">
+              ${title}
+            </td>
+          </tr>
 
-            <!-- STRIP -->
-            <tr>
-              <td style="background:${stripColor}; height:6px;"></td>
-             </tr>
+          <!-- 3. MAIN BODY OF CARD (SIMPLE TABLE FORM) -->
+          <tr>
+            <td style="padding:24px 30px; background:#ffffff;">
+              <table width="100%" cellpadding="7" cellspacing="0" border="0" style="font-size:14px; color:#333; border-collapse:collapse; text-align:left;">
+                ${tableRowsHtml}
+              </table>
+            </td>
+          </tr>
 
-            <!-- TITLE -->
-            <tr>
-              <td style="background:${titleColor}; color:#fff; text-align:center; padding:12px; font-size:18px; font-weight:bold;">
-                ${title}
-               </td>
-             </tr>
+          <!-- 4. FOOTER FIRST SECTION (DATE & VENUE: bg color - #003A77, text-color - #ffffff) -->
+          <tr>
+            <td style="background:#003A77; color:#ffffff; padding:15px; text-align:center; font-size:14px;">
+              <strong>13-15 May 2027</strong> • Auto Cluster Exhibition Centre, Pune, India
+            </td>
+          </tr>
 
-            <!-- CONTENT -->
-            <tr>
-              <td style="padding:24px 30px;">
-                <table width="100%" cellpadding="0" cellspacing="0" style="font-size:14px; color:#333;">
-                  ${fields}
-                 </table>
-               </td>
-             </tr>
+          <!-- 5. FOOTER SECOND SECTION (ORGANIZER: ON LEFT THE ORGANIZER LOGO, ON RIGHT END THE ADDRESS, bg-color - #E6EEF7) -->
+          <tr>
+            <td style="background:#E6EEF7; padding:20px; font-size:12px; color:#333;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td width="38%" align="left" valign="middle">
+                    <span style="font-size:11px; color:#666; font-weight:bold; text-transform:uppercase; display:block; margin-bottom:6px;">Organized By:</span>
+                    <img 
+                      src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774687173/maxxlogo_lulkwh.png"
+                      style="max-width:140px; display:block;"
+                      alt="Maxx Business Media Logo"
+                    />
+                  </td>
+                  <td width="62%" align="right" valign="middle" style="font-size:12px; color:#333; line-height:1.6; text-align:right;">
+                    <strong>Maxx Business Media Pvt Ltd</strong><br/>
+                    T9, Swastik Manandi Arcade, Bengaluru, India<br/>
+                    Tel: +91 91483 19993 | pad@maxxmedia.in | www.indiametexpo.com
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
 
-            <!-- FOOTER -->
-            <tr>
-              <td style="background:#003A77; padding:15px;">
-                <table width="100%">
-                  <tr>
-                    
-                    <!-- LEFT LOGO -->
-                    <td align="left">
-                      <img 
-                        src="https://res.cloudinary.com/deo4vpw8f/image/upload/v1774687173/maxxlogo_lulkwh.png"
-                        style="max-width:120px; display:block;"
-                        alt="Maxx Business Media Logo"
-                      />
-                     </td>
-
-                    <!-- RIGHT TEXT -->
-                    <td align="right" style="color:#fff; font-size:12px; line-height:1.5;">
-                      <strong>13-15 May 2027</strong><br/>
-                      Auto Cluster Exhibition Centre, Pune<br/>
-                      Maxx Business Media Pvt Ltd<br/>
-                      Bengaluru, India
-                     </td>
-
-                    </tr>
-                  </table>
-                </td>
-              </tr>
-
-            </table>
-          </td>
-        </tr>
-      </table>
-
-  </body>
-  </html>
-  `;
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `.trim();
 }
 
 router.get("/pass/:code", async (req, res) => {
@@ -981,10 +1091,8 @@ router.post("/", async (req, res) => {
         case "delegate-registration":
           adminSubject = "Delegate Registration - IndiaMet 2027";
           adminHtml = generateInwardTemplate({
-            title: "New Delegate Registration !",
-            lightBg: "#FFFFFF",
-            stripColor: "#F2E3E7",
-            titleColor: "#A84C7D",
+            title: "Delegate Registration",
+            formType,
             data: { ...data, visitorCode: visitorCode || 'N/A' }
           });
           break;
@@ -992,22 +1100,17 @@ router.post("/", async (req, res) => {
         case "exhibitor-enquiry":
           adminSubject = "Exhibitor Enquiry - IndiaMet 2027";
           adminHtml = generateInwardTemplate({
-            title: "Exhibitor Enquiry !",
-            lightBg: "#FFFFFF",
-            stripColor: "#CFE3EE",
-            titleColor: "#1F3F4F",
-            data,
-            includeSpace: true
+            title: "Exhibitor Registration",
+            formType,
+            data
           });
           break;
 
         case "event-brochure":
           adminSubject = "Brochure Download - IndiaMet 2027";
           adminHtml = generateInwardTemplate({
-            title: "Brochure Download !",
-            lightBg: "#FFFFFF",
-            stripColor: "#EAD6B8",
-            titleColor: "#93ddd8ff",
+            title: "Brochure Download",
+            formType,
             data
           });
           break;
@@ -1015,10 +1118,8 @@ router.post("/", async (req, res) => {
         case "post-show-report":
           adminSubject = "Post Show Report - IndiaMet 2027";
           adminHtml = generateInwardTemplate({
-            title: "Post Show Report Download !",
-            lightBg: "#FFFFFF",
-            stripColor: "#DDE5B2",
-            titleColor: "#00e4f4ff",
+            title: "Post Show Report Download",
+            formType,
             data
           });
           break;
@@ -1026,10 +1127,8 @@ router.post("/", async (req, res) => {
         case "visitor-registration":
           adminSubject = "New Visitor Registration - IndiaMet 2027";
           adminHtml = generateInwardTemplate({
-            title: "New Visitor Registration - IndiaMet 2027",
-            lightBg: "#FFFFFF",
-            stripColor: "#00A1B1",
-            titleColor: "#003A77",
+            title: "Visitor Registration",
+            formType,
             data: { ...data, visitorCode: visitorCode || 'N/A' }
           });
           break;
@@ -1038,10 +1137,8 @@ router.post("/", async (req, res) => {
         case "partner-registration":
           adminSubject = "New Sponsor / Partner Registration - IndiaMet 2027";
           adminHtml = generateInwardTemplate({
-            title: "New Sponsor / Partner Registration !",
-            lightBg: "#FFFFFF",
-            stripColor: "#7E22CE",
-            titleColor: "#581C87",
+            title: "Sponsor Registration",
+            formType,
             data
           });
           break;
@@ -1053,21 +1150,17 @@ router.post("/", async (req, res) => {
         case "awards":
           adminSubject = "New Award Nomination - IndiaMET 2027";
           adminHtml = generateInwardTemplate({
-            title: "New Award Nomination !",
-            lightBg: "#FFFFFF",
-            stripColor: "#00A1B1",
-            titleColor: "#003A77",
+            title: "Award Nomination",
+            formType,
             data
           });
           break;
 
         default:
-          adminSubject = "Exhibitor Enquiry - IndiaMet 2027";
+          adminSubject = "Form Submission - IndiaMet 2027";
           adminHtml = generateInwardTemplate({
-            title: "New Form Submission",
-            lightBg: "#FFFFFF",
-            stripColor: "#e0e0e0",
-            titleColor: "#333",
+            title: "Form Submission",
+            formType,
             data
           });
       }
