@@ -213,7 +213,7 @@ function renderUserDetailsCard(formType, data = {}) {
         ["city", data.city || "Not provided"],
         ["pin", data.pincode || data.pin || data.postalCode || "Not provided"],
         ["productsector", data.productSector || data.sector || data.industry || "N/A"],
-        ["inttestlevel", data.interestLevel || "N/A"],
+        ["Interest Level", data.interestLevel || "N/A"],
         ["message", data.message || data.comments || "N/A"],
       ];
       break;
@@ -490,7 +490,7 @@ function generateInwardTemplate({
         ["city", data.city || "Not provided"],
         ["pin", data.pincode || data.pin || data.postalCode || "Not provided"],
         ["productsector", data.productSector || data.sector || data.industry || "N/A"],
-        ["inttestlevel", data.interestLevel || "N/A"],
+        ["Interest Level", data.interestLevel || "N/A"],
         ["message", data.message || data.comments || "N/A"],
         ...utmRows
       ];
