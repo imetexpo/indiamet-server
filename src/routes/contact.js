@@ -189,89 +189,166 @@ async function generateQRCodeBuffer(data) {
   }
 }
 
-function renderDetailsCard(data = {}) {
-  const name = [data.firstName, data.lastName].filter(Boolean).join(" ").trim() || data.name || data.contactPerson || "Not provided";
-  const company = data.companyName || data.company || "Not provided";
-  const jobTitle = data.jobTitle || data.designation || "Not provided";
-  const phone = data.phone || data.mobile || "Not provided";
-  const email = data.email || "Not provided";
-  const address = [data.address, data.city, data.state, data.country, data.pincode].filter(Boolean).join(", ") || data.address || data.city || "Not provided";
+function renderUserDetailsCard(formType, data = {}) {
+  const isSponsor = formType === "sponsor-registration" || formType === "partner-registration";
+  const labelColor = isSponsor ? "#6B21A8" : "#003A77";
+  const borderColor = isSponsor ? "#E9D5FF" : "#CBD5E1";
+  const bgColor = isSponsor ? "#FAF5FF" : "#E8F1F8";
+
+  let fieldRows = [];
+
+  switch (formType) {
+    case "exhibitor-enquiry":
+      fieldRows = [
+        ["firstname", data.firstName || data.name?.split(" ")[0] || "Not provided"],
+        ["lastname", data.lastName || (data.name?.includes(" ") ? data.name.split(" ").slice(1).join(" ") : "") || "Not provided"],
+        ["companyname", data.companyName || data.company || "Not provided"],
+        ["jobtittle", data.jobTitle || data.designation || "Not provided"],
+        ["phone number", data.phone || data.mobile || "Not provided"],
+        ["website", data.companyWebsite || data.website || "N/A"],
+        ["address", data.address || "Not provided"],
+        ["country", data.country || "Not provided"],
+        ["state", data.state || "Not provided"],
+        ["city", data.city || "Not provided"],
+        ["pin", data.pincode || data.pin || data.postalCode || "Not provided"],
+        ["productsector", data.productSector || data.sector || data.industry || "N/A"],
+        ["inttestlevel", data.interestLevel || "N/A"],
+        ["message", data.message || data.comments || "N/A"],
+      ];
+      break;
+
+    case "event-brochure":
+    // case "post-show-report": // commented for now
+      fieldRows = [
+        ["firstname", data.firstName || data.name?.split(" ")[0] || "Not provided"],
+        ["lastname", data.lastName || (data.name?.includes(" ") ? data.name.split(" ").slice(1).join(" ") : "") || "Not provided"],
+        ["companyname", data.companyName || data.company || "Not provided"],
+        ["jobtittle", data.jobTitle || data.designation || "Not provided"],
+        ["email", data.email || "Not provided"],
+        ["phone number", data.phone || data.mobile || "Not provided"],
+        ["website", data.website || data.companyWebsite || "N/A"],
+        ["address", data.address || "Not provided"],
+        ["country", data.country || "Not provided"],
+        ["state", data.state || "Not provided"],
+        ["city", data.city || "Not provided"],
+        ["pin", data.pincode || data.pin || data.postalCode || "Not provided"],
+        ["productsector", data.productSector || (Array.isArray(data.productSectors) ? data.productSectors.join(", ") : data.productSectors) || data.sector || data.industry || "N/A"],
+      ];
+      break;
+
+    case "sponsor-registration":
+    case "partner-registration":
+      fieldRows = [
+        ["firstname", data.firstName || data.name?.split(" ")[0] || "Not provided"],
+        ["lastname", data.lastName || (data.name?.includes(" ") ? data.name.split(" ").slice(1).join(" ") : "") || "Not provided"],
+        ["companyname", data.companyName || data.company || "Not provided"],
+        ["jobtittle", data.jobTitle || data.designation || "Not provided"],
+        ["email", data.email || "Not provided"],
+        ["phone number", data.phone || data.mobile || "Not provided"],
+        ["website", data.website || data.companyWebsite || "N/A"],
+        ["address", data.address || "Not provided"],
+        ["country", data.country || "Not provided"],
+        ["state", data.state || "Not provided"],
+        ["city", data.city || "Not provided"],
+        ["pin", data.pincode || data.pin || data.postalCode || "Not provided"],
+        ["Partnership Type", data.partnershipType ? (data.partnershipType.charAt(0).toUpperCase() + data.partnershipType.slice(1)) : (data.sponsorshipType || "N/A")],
+      ];
+      break;
+
+    case "award-nomination":
+    case "awards-registration":
+    case "award-registration":
+    case "nomination":
+    case "awards":
+      fieldRows = [
+        ["firstname", data.firstName || data.name?.split(" ")[0] || "Not provided"],
+        ["lastname", data.lastName || (data.name?.includes(" ") ? data.name.split(" ").slice(1).join(" ") : "") || "Not provided"],
+        ["companyname", data.companyName || data.company || "Not provided"],
+        ["jobtittle", data.jobTitle || data.designation || "Not provided"],
+        ["mail", data.email || "Not provided"],
+        ["phone number", data.phone || data.mobile || "Not provided"],
+        ["website", data.website || data.companyWebsite || "N/A"],
+        ["address", data.address || [data.city, data.state, data.country].filter(Boolean).join(", ") || "Not provided"],
+        ["country", data.country || "Not provided"],
+        ["state", data.state || "Not provided"],
+        ["city", data.city || "Not provided"],
+        ["pin", data.pincode || data.pin || data.postalCode || "Not provided"],
+        ["Award Category", data.awardCategory || data.category || "N/A"],
+        ["industry", data.industry || "N/A"],
+        ["message", data.message || data.achievements || "N/A"],
+      ];
+      break;
+
+    case "visitor-registration":
+      fieldRows = [
+        ["Full Name", [data.firstName, data.lastName].filter(Boolean).join(" ").trim() || data.name || data.fullName || "Not provided"],
+        ["companyname", data.companyName || data.company || "Not provided"],
+        ["Media", data.media || data.mediaPartner || data.isMedia || data.industry || "N/A"],
+        ["phone number", data.phone || data.mobile || "Not provided"],
+        ["website", data.website || data.companyWebsite || "N/A"],
+        ["address", data.address || "Not provided"],
+        ["country", data.country || "Not provided"],
+        ["state", data.state || "Not provided"],
+        ["city", data.city || "Not provided"],
+        ["pin", data.pincode || data.pin || data.postalCode || "Not provided"],
+        ["Visitorcode", data.visitorCode || "N/A"],
+        ["promocode", data.promocode || data.promoCode || "N/A"],
+      ];
+      break;
+
+    case "delegate-registration":
+      fieldRows = [
+        ["Full Name", [data.firstName, data.lastName].filter(Boolean).join(" ").trim() || data.name || data.fullName || "Not provided"],
+        ["companyname", data.companyName || data.company || "Not provided"],
+        ["jobtittle", data.jobTitle || data.designation || "Not provided"],
+        ["phone number", data.phone || data.mobile || "Not provided"],
+        ["website", data.website || data.companyWebsite || "N/A"],
+        ["address", data.address || "Not provided"],
+        ["country", data.country || "Not provided"],
+        ["state", data.state || "Not provided"],
+        ["city", data.city || "Not provided"],
+        ["pin", data.pincode || data.pin || data.postalCode || "Not provided"],
+        ["Visitorcode", data.visitorCode || "N/A"],
+        ["promocode", data.promocode || data.promoCode || "N/A"],
+        ["Select Package", data.package || "N/A"],
+      ];
+      break;
+
+    default:
+      fieldRows = [
+        ["Name", [data.firstName, data.lastName].filter(Boolean).join(" ").trim() || data.name || data.contactPerson || "Not provided"],
+        ["Company", data.companyName || data.company || "Not provided"],
+        ["Job Title", data.jobTitle || data.designation || "Not provided"],
+        ["Phone Number", data.phone || data.mobile || "Not provided"],
+        ["Address", data.address || "Not provided"],
+      ];
+  }
+
+  const rowsHtml = fieldRows.map(([label, value], index) => {
+    const isLast = index === fieldRows.length - 1;
+    const borderStyle = isLast ? "" : `border-bottom:1px solid ${borderColor};`;
+    return `
+      <tr>
+        <td width="38%" style="${borderStyle} color:${labelColor}; padding:8px 12px;"><strong>${label}</strong></td>
+        <td style="${borderStyle} color:#1e293b; padding:8px 12px;">: ${value}</td>
+      </tr>
+    `;
+  }).join("");
 
   return `
     <table width="100%" cellpadding="8" cellspacing="0" 
-      style="background:#E8F1F8; margin:20px 0; border:1px solid #CBD5E1; border-radius:6px; border-collapse:collapse; font-size:14px; text-align:left;">
-      <tr>
-        <td width="35%" style="border-bottom:1px solid #CBD5E1; color:#003A77; padding:8px 12px;"><strong>Name</strong></td>
-        <td style="border-bottom:1px solid #CBD5E1; font-weight:600; color:#1e293b; padding:8px 12px;">: ${name}</td>
-      </tr>
-      <tr>
-        <td style="border-bottom:1px solid #CBD5E1; color:#003A77; padding:8px 12px;"><strong>Company</strong></td>
-        <td style="border-bottom:1px solid #CBD5E1; color:#1e293b; padding:8px 12px;">: ${company}</td>
-      </tr>
-      <tr>
-        <td style="border-bottom:1px solid #CBD5E1; color:#003A77; padding:8px 12px;"><strong>Job Title</strong></td>
-        <td style="border-bottom:1px solid #CBD5E1; color:#1e293b; padding:8px 12px;">: ${jobTitle}</td>
-      </tr>
-      <tr>
-        <td style="border-bottom:1px solid #CBD5E1; color:#003A77; padding:8px 12px;"><strong>Phone Number</strong></td>
-        <td style="border-bottom:1px solid #CBD5E1; color:#1e293b; padding:8px 12px;">: ${phone}</td>
-      </tr>
-      <tr>
-        <td style="border-bottom:1px solid #CBD5E1; color:#003A77; padding:8px 12px;"><strong>Email</strong></td>
-        <td style="border-bottom:1px solid #CBD5E1; color:#1e293b; padding:8px 12px;">: ${email}</td>
-      </tr>
-      <tr>
-        <td style="color:#003A77; padding:8px 12px;"><strong>Address</strong></td>
-        <td style="color:#1e293b; padding:8px 12px;">: ${address}</td>
-      </tr>
+      style="background:${bgColor}; margin:20px 0; border:1px solid ${borderColor}; border-radius:6px; border-collapse:collapse; font-size:14px; text-align:left;">
+      ${rowsHtml}
     </table>
   `;
 }
 
-function renderSponsorDetailsCard(data = {}) {
-  const name = [data.firstName, data.lastName].filter(Boolean).join(" ").trim() || data.name || data.contactPerson || "Not provided";
-  const company = data.companyName || data.company || "Not provided";
-  const jobTitle = data.jobTitle || data.designation || "Not provided";
-  const phone = data.phone || data.mobile || "Not provided";
-  const email = data.email || "Not provided";
-  const address = [data.address, data.city, data.state, data.country, data.pincode].filter(Boolean).join(", ") || data.address || data.city || "Not provided";
-  const partnershipType = data.partnershipType ? data.partnershipType.charAt(0).toUpperCase() + data.partnershipType.slice(1) : (data.sponsorshipType || null);
+function renderDetailsCard(data = {}, formType = "") {
+  return renderUserDetailsCard(formType, data);
+}
 
-  return `
-    <table width="100%" cellpadding="8" cellspacing="0" 
-      style="background:#FAF5FF; margin:20px 0; border:1px solid #E9D5FF; border-radius:6px; border-collapse:collapse; font-size:14px; text-align:left;">
-      <tr>
-        <td width="35%" style="border-bottom:1px solid #E9D5FF; color:#6B21A8; padding:8px 12px;"><strong>Name</strong></td>
-        <td style="border-bottom:1px solid #E9D5FF; font-weight:600; color:#1e293b; padding:8px 12px;">: ${name}</td>
-      </tr>
-      <tr>
-        <td style="border-bottom:1px solid #E9D5FF; color:#6B21A8; padding:8px 12px;"><strong>Company</strong></td>
-        <td style="border-bottom:1px solid #E9D5FF; color:#1e293b; padding:8px 12px;">: ${company}</td>
-      </tr>
-      <tr>
-        <td style="border-bottom:1px solid #E9D5FF; color:#6B21A8; padding:8px 12px;"><strong>Job Title</strong></td>
-        <td style="border-bottom:1px solid #E9D5FF; color:#1e293b; padding:8px 12px;">: ${jobTitle}</td>
-      </tr>
-      <tr>
-        <td style="border-bottom:1px solid #E9D5FF; color:#6B21A8; padding:8px 12px;"><strong>Phone Number</strong></td>
-        <td style="border-bottom:1px solid #E9D5FF; color:#1e293b; padding:8px 12px;">: ${phone}</td>
-      </tr>
-      <tr>
-        <td style="border-bottom:1px solid #E9D5FF; color:#6B21A8; padding:8px 12px;"><strong>Email</strong></td>
-        <td style="border-bottom:1px solid #E9D5FF; color:#1e293b; padding:8px 12px;">: ${email}</td>
-      </tr>
-      <tr>
-        <td style="${partnershipType ? 'border-bottom:1px solid #E9D5FF;' : ''} color:#6B21A8; padding:8px 12px;"><strong>Address</strong></td>
-        <td style="${partnershipType ? 'border-bottom:1px solid #E9D5FF;' : ''} color:#1e293b; padding:8px 12px;">: ${address}</td>
-      </tr>
-      ${partnershipType ? `
-      <tr>
-        <td style="color:#6B21A8; padding:8px 12px;"><strong>Partnership Type</strong></td>
-        <td style="color:#1e293b; font-weight:600; padding:8px 12px;">: ${partnershipType}</td>
-      </tr>
-      ` : ''}
-    </table>
-  `;
+function renderSponsorDetailsCard(data = {}) {
+  return renderUserDetailsCard("sponsor-registration", data);
 }
 
 function generateUserEmailTemplate({
@@ -401,7 +478,6 @@ function generateInwardTemplate({
         ["lastname", data.lastName || (data.name?.includes(" ") ? data.name.split(" ").slice(1).join(" ") : "") || "Not provided"],
         ["companyname", data.companyName || data.company || "Not provided"],
         ["jobtittle", data.jobTitle || data.designation || "Not provided"],
-        ["email", data.email || data.email || "Not provided"],
         ["phone number", data.phone || data.mobile || "Not provided"],
         ["website", data.companyWebsite || data.website || "N/A"],
         ["address", data.address || "Not provided"],
@@ -421,7 +497,6 @@ function generateInwardTemplate({
         ["Full Name", [data.firstName, data.lastName].filter(Boolean).join(" ").trim() || data.name || data.fullName || "Not provided"],
         ["companyname", data.companyName || data.company || "Not provided"],
         ["Media", data.media || data.mediaPartner || data.isMedia || data.industry || "N/A"],
-        ["email", data.email || data.email || "Not provided"],
         ["phone number", data.phone || data.mobile || "Not provided"],
         ["website", data.website || data.companyWebsite || "N/A"],
         ["address", data.address || "Not provided"],
@@ -436,13 +511,12 @@ function generateInwardTemplate({
       break;
 
     case "event-brochure":
-    case "post-show-report":
+    // case "post-show-report": // commented for now
       fieldRows = [
         ["firstname", data.firstName || data.name?.split(" ")[0] || "Not provided"],
         ["lastname", data.lastName || (data.name?.includes(" ") ? data.name.split(" ").slice(1).join(" ") : "") || "Not provided"],
         ["companyname", data.companyName || data.company || "Not provided"],
         ["jobtittle", data.jobTitle || data.designation || "Not provided"],
-        ["email", data.email || data.email || "Not provided"],
         ["phone number", data.phone || data.mobile || "Not provided"],
         ["website", data.website || data.companyWebsite || "N/A"],
         ["address", data.address || "Not provided"],
@@ -461,7 +535,6 @@ function generateInwardTemplate({
         ["firstname", data.firstName || data.name?.split(" ")[0] || "Not provided"],
         ["lastname", data.lastName || (data.name?.includes(" ") ? data.name.split(" ").slice(1).join(" ") : "") || "Not provided"],
         ["companyname", data.companyName || data.company || "Not provided"],
-        ["email", data.email || data.email || "Not provided"],
         ["jobtittle", data.jobTitle || data.designation || "Not provided"],
         ["phone number", data.phone || data.mobile || "Not provided"],
         ["website", data.website || data.companyWebsite || "N/A"],
@@ -480,7 +553,6 @@ function generateInwardTemplate({
         ["Full Name", [data.firstName, data.lastName].filter(Boolean).join(" ").trim() || data.name || data.fullName || "Not provided"],
         ["companyname", data.companyName || data.company || "Not provided"],
         ["jobtittle", data.jobTitle || data.designation || "Not provided"],
-        ["email", data.email || data.email || "Not provided"],
         ["phone number", data.phone || data.mobile || "Not provided"],
         ["website", data.website || data.companyWebsite || "N/A"],
         ["address", data.address || "Not provided"],
@@ -490,7 +562,7 @@ function generateInwardTemplate({
         ["pin", data.pincode || data.pin || data.postalCode || "Not provided"],
         ["Visitorcode", data.visitorCode || "N/A"],
         ["promocode", data.promocode || data.promoCode || "N/A"],
-        ["Select Package", data.package || data.package || "N/A"],
+        ["Select Package", data.package || "N/A"],
         ...utmRows
       ];
       break;
@@ -505,7 +577,6 @@ function generateInwardTemplate({
         ["lastname", data.lastName || (data.name?.includes(" ") ? data.name.split(" ").slice(1).join(" ") : "") || "Not provided"],
         ["companyname", data.companyName || data.company || "Not provided"],
         ["jobtittle", data.jobTitle || data.designation || "Not provided"],
-        ["email", data.email || data.email || "Not provided"],
         ["phone number", data.phone || data.mobile || "Not provided"],
         ["website", data.website || data.companyWebsite || "N/A"],
         ["address", data.address || [data.city, data.state, data.country].filter(Boolean).join(", ") || "Not provided"],
@@ -524,7 +595,6 @@ function generateInwardTemplate({
       fieldRows = [
         ["Name", [data.firstName, data.lastName].filter(Boolean).join(" ").trim() || data.name || data.contactPerson || "Not provided"],
         ["Company", data.companyName || data.company || "Not provided"],
-        ["email", data.email || data.email || "Not provided"],
         ["Job Title", data.jobTitle || data.designation || "Not provided"],
         ["Phone Number", data.phone || data.mobile || "Not provided"],
         ["Address", data.address || "Not provided"],
@@ -614,6 +684,7 @@ function generateInwardTemplate({
 </html>
   `.trim();
 }
+
 
 router.get("/pass/:code", async (req, res) => {
   try {
@@ -859,7 +930,7 @@ router.post("/", async (req, res) => {
           name: userName,
           actionText: "downloading the event brochure for",
           teamName: "Brochure Team",
-          detailsCardHtml: renderDetailsCard(data),
+          detailsCardHtml: renderUserDetailsCard(formType, data),
           extraContent: `
             <div style="margin:25px 0; text-align:center;">
               <a href="https://res.cloudinary.com/deo4vpw8f/image/upload/v1793947874/IndiaMet_Brochure_compressed_ex2v66.pdf"
@@ -883,13 +954,14 @@ router.post("/", async (req, res) => {
         });
         break;
 
+      /*
       case "post-show-report":
         subject = "Your Post Show Report - IndiaMET 2027";
         html = generateUserEmailTemplate({
           name: userName,
           actionText: "downloading the post show report for",
           teamName: "Post Show Report Team",
-          detailsCardHtml: renderDetailsCard(data),
+          detailsCardHtml: renderUserDetailsCard(formType, data),
           extraContent: `
             <div style="margin:25px 0; text-align:center;">
               <a href="https://res.cloudinary.com/deo4vpw8f/image/upload/v1793947874/IndiaMet_Brochure_compressed_ex2v66.pdf"
@@ -912,6 +984,7 @@ router.post("/", async (req, res) => {
           `
         });
         break;
+      */
 
       case "visitor-registration":
         subject = "Visitor Registration Confirmed - IndiaMET 2027";
@@ -919,7 +992,7 @@ router.post("/", async (req, res) => {
           name: userName,
           actionText: "visiting",
           teamName: "Visitor Registration Team",
-          detailsCardHtml: renderDetailsCard(data),
+          detailsCardHtml: renderUserDetailsCard(formType, data),
           extraContent: `
             <!-- QR CODE BADGE -->
             <div style="margin:25px 0; text-align:center;">
@@ -966,7 +1039,7 @@ router.post("/", async (req, res) => {
           name: userName,
           actionText: "exhibiting at",
           teamName: "Exhibition Team",
-          detailsCardHtml: renderDetailsCard(data)
+          detailsCardHtml: renderUserDetailsCard(formType, data)
         });
         break;
 
@@ -976,7 +1049,7 @@ router.post("/", async (req, res) => {
           name: userName,
           actionText: "attending as a delegate at",
           teamName: "Delegate Registration Team",
-          detailsCardHtml: renderDetailsCard(data),
+          detailsCardHtml: renderUserDetailsCard(formType, data),
           extraContent: `
             <!-- QR CODE BADGE -->
             <div style="margin:25px 0; text-align:center;">
@@ -1024,7 +1097,7 @@ router.post("/", async (req, res) => {
           name: userName,
           actionText: "sponsoring and partnering with",
           teamName: "Sponsorship & Partnerships Team",
-          detailsCardHtml: renderSponsorDetailsCard(data),
+          detailsCardHtml: renderUserDetailsCard(formType, data),
           headerBg: "#F5F3FF",
           primaryColor: "#6B21A8",
           footerOrgBg: "#F5F3FF"
@@ -1041,7 +1114,7 @@ router.post("/", async (req, res) => {
           name: userName,
           actionText: "submitting your nomination for",
           teamName: "Awards Team",
-          detailsCardHtml: renderDetailsCard(data)
+          detailsCardHtml: renderUserDetailsCard(formType, data)
         });
         break;
 
@@ -1051,7 +1124,7 @@ router.post("/", async (req, res) => {
           name: userName,
           actionText: "submitting your enquiry to",
           teamName: "Team",
-          detailsCardHtml: renderDetailsCard(data)
+          detailsCardHtml: renderUserDetailsCard(formType, data)
         });
     }
 
@@ -1122,6 +1195,7 @@ router.post("/", async (req, res) => {
           });
           break;
 
+        /*
         case "post-show-report":
           adminSubject = "Post Show Report - IndiaMet 2027";
           adminHtml = generateInwardTemplate({
@@ -1130,6 +1204,7 @@ router.post("/", async (req, res) => {
             data
           });
           break;
+        */
 
         case "visitor-registration":
           adminSubject = "New Visitor Registration - IndiaMet 2027";
