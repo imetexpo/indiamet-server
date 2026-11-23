@@ -176,9 +176,10 @@ async function uploadBadgeImageToCloudinary(pass, designId = null) {
       overwrite: true,
     });
 
-    if (uploadRes?.url) {
-      console.log(`[BadgeRenderer] Uploaded visitor badge (${activeDesign}) to Cloudinary:`, uploadRes.url);
-      return uploadRes.url;
+    const publicUrl = uploadRes?.secure_url || uploadRes?.url;
+    if (publicUrl) {
+      console.log('[BadgeRenderer] Uploaded visitor badge (' + activeDesign + ') to Cloudinary:', publicUrl);
+      return publicUrl;
     }
   } catch (err) {
     console.warn('[BadgeRenderer] Could not upload badge PNG to Cloudinary:', err.message);

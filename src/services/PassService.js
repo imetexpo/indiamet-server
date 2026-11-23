@@ -24,7 +24,7 @@ const messaging = require('./PassMessagingService');
 const emailService = require('./EmailService');
 const cloudinaryService = require('./CloudinaryService');
 const { uploadBadgeImageToCloudinary } = require('../utils/badgeRenderer');
-const cmsLeadService = require('./CmsLeadService');
+const cmsSync = require('./VisitorPassCmsSyncService');
 
 /**
  * Persists the registered visitor as a lead in MySQL (contact_submissions),
@@ -140,12 +140,8 @@ async function recordPassLead(pass, payload = {}) {
     console.warn('[PassService] Admin notification error:', err.message);
   }
 
-  // Sync to Central CMS
-  try {
-    await cmsLeadService.syncPass(pass);
-  } catch (err) {
-    console.warn('[PassService] CMS sync error:', err.message);
-  }
+  // Queue the full visitor-pass record for idempotent CMS synchronization.
+  await cmsSync.enqueue(pass, { tracking: payload.tracking || payload });
 }
 
 // ============================================================================
@@ -940,6 +936,7 @@ async function deliverPass(pass, channel) {
   pass.sentVia = sendChannel;
   pass.sentStatus = result.success ? (result.simulated ? 'simulated' : (result.status || 'accepted')) : 'failed';
   await pass.save();
+  await cmsSync.enqueue(pass);
 
   return {
     success: result.success,
@@ -1105,7 +1102,7 @@ async function recordScan({ code, scannerId }) {
   const VisitorPass = await getModel();
   const Scan = await getScanModel();
   const deviceId = String(scannerId || '').trim().slice(0, 64) || null;
-  return VisitorPass.sequelize.transaction(async (transaction) => {
+  const result = await VisitorPass.sequelize.transaction(async (transaction) => {
     // Serialize check-and-insert for this pass across all server processes.
     const pass = await VisitorPass.findByPk(found.id, { transaction, lock: transaction.LOCK.UPDATE });
     if (!pass || pass.status === 'cancelled') {
@@ -1142,6 +1139,11 @@ async function recordScan({ code, scannerId }) {
       visitor: scanVisitor(pass), scannedAt: scan.scannedAt, todayVisit, eventVisits
     };
   });
+  if (!result.duplicate) {
+    const updated = await VisitorPass.findByPk(found.id);
+    if (updated) await cmsSync.enqueue(updated);
+  }
+  return result;
 }
 
 /**

@@ -148,7 +148,7 @@ class AppServer {
       const modelFactory = require('./models');
 
       // Initialize models
-      const models = modelFactory.init();
+      const models = await modelFactory.init();
       console.log(`✅ Models initialized: ${Object.keys(models).length} models loaded`);
 
       // Sync models with database (development only)
@@ -1018,6 +1018,7 @@ setupRoutes() {
 
         // Check/create default admin user
         await this.checkDefaultAdmin();
+        require('./services/VisitorPassCmsSyncService').startWorker();
 
         resolve();
       });
@@ -1119,6 +1120,7 @@ async checkDefaultAdmin() {
   }
 
   async stop() {
+    require('./services/VisitorPassCmsSyncService').stopWorker();
     if (this.isShuttingDown) return;
 
     this.isShuttingDown = true;

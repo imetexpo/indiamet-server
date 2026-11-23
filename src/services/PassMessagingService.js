@@ -62,7 +62,12 @@ class PassMessagingService {
     if (!['sms', 'whatsapp'].includes(channel)) return false;
     if (kind === 'otp' && this.verifyReady()) return true;
     const provider = this.getProvider(channel);
-    return Boolean(provider && provider !== 'dev');
+    if (!provider || provider === 'dev') return false;
+    if (provider === 'twilio' && channel === 'whatsapp') {
+      const sid = kind === 'otp' ? process.env.TWILIO_WHATSAPP_OTP_CONTENT_SID : (process.env.TWILIO_WHATSAPP_PASS_CONTENT_SID || process.env.TWILIO_WHATSAPP_CONTENT_SID);
+      return Boolean(sid?.trim());
+    }
+    return true;
   }
 
   buildWhatsAppLink(phone, text) {
@@ -153,7 +158,7 @@ class PassMessagingService {
     try {
       let response;
       if (provider === 'twilio' && channel === 'whatsapp') {
-        response = await this.sendTwilioWhatsApp(phone, kind, templateData, message, mediaUrl);
+        response = await this.sendTwilioWhatsApp(phone, kind, templateData);
       } else if (provider === 'twilio') {
         response = await this.sendTwilioSms(phone, message);
       } else if (provider === 'meta') {
@@ -191,63 +196,35 @@ class PassMessagingService {
     return result.data;
   }
 
+  cloudinaryMediaPath(mediaUrl) {
+    const cloudName = String(process.env.CLOUDINARY_CLOUD_NAME || '').trim();
+    const prefix = '/' + cloudName + '/image/upload/';
+    let url;
+    try { url = new URL(mediaUrl); } catch (_) {}
+    if (!cloudName || !url || url.protocol !== 'https:' || url.hostname !== 'res.cloudinary.com' || !url.pathname.startsWith(prefix) || url.pathname === prefix) throw new Error('WhatsApp mediaPath requires a public Cloudinary image URL.');
+    return url.pathname.slice(prefix.length) + url.search;
+  }
   templateVariables(kind, values = {}) {
-    const raw = kind === 'otp'
-      ? process.env.TWILIO_WHATSAPP_OTP_VARIABLES
-      : process.env.TWILIO_WHATSAPP_PASS_VARIABLES;
-    const mapping = raw ? JSON.parse(raw) :
-      (kind === 'otp' ? { 1: 'otp' } : { 1: 'name', 2: 'registrationNumber', 3: 'passUrl' });
-    if (!mapping || Array.isArray(mapping) || typeof mapping !== 'object') {
-      throw new Error('WhatsApp template variable mapping must be a JSON object.');
-    }
+    const raw = kind === 'otp' ? process.env.TWILIO_WHATSAPP_OTP_VARIABLES : process.env.TWILIO_WHATSAPP_PASS_VARIABLES;
+    const mapping = raw ? JSON.parse(raw) : (kind === 'otp' ? { 1: 'otp' } : { 1: 'name', 2: 'registrationNumber', 3: 'passUrl' });
+    if (!mapping || Array.isArray(mapping) || typeof mapping !== 'object') throw new Error('WhatsApp template variable mapping must be a JSON object.');
+    const templateValues = Object.values(mapping).includes('mediaPath') ? { ...values, mediaPath: this.cloudinaryMediaPath(values.mediaUrl) } : values;
     const result = {};
     for (const [placeholder, field] of Object.entries(mapping)) {
-      if (!Object.prototype.hasOwnProperty.call(values, field) || values[field] == null) {
-        throw new Error('Missing WhatsApp template value: ' + field);
-      }
-      result[placeholder] = String(values[field]);
+      if (!Object.prototype.hasOwnProperty.call(templateValues, field) || templateValues[field] == null || String(templateValues[field]).trim() === '') throw new Error('Missing WhatsApp template value: ' + field);
+      result[placeholder] = String(templateValues[field]);
     }
     return result;
   }
-
-  async sendTwilioWhatsApp(phone, kind, values = {}, bodyText = '', mediaUrl = null) {
-    const formattedPhone = String(phone || '').trim().replace(/^[^\d+]+/, '');
-    const toPhone = formattedPhone.startsWith('+') ? formattedPhone : '+' + formattedPhone.replace(/\D/g, '');
-    const sid = kind === 'otp'
-      ? process.env.TWILIO_WHATSAPP_OTP_CONTENT_SID
-      : (process.env.TWILIO_WHATSAPP_PASS_CONTENT_SID || process.env.TWILIO_WHATSAPP_CONTENT_SID);
-
-    if (sid && sid.trim()) {
-      const params = new URLSearchParams({
-        To: 'whatsapp:' + toPhone,
-        From: this.whatsAppFrom(),
-        ContentSid: sid.trim(),
-        ContentVariables: JSON.stringify(this.templateVariables(kind, values))
-      });
-      const result = await axios.post(this.twilioMessagesUrl(), params, {
-        auth: this.twilioAuth(), timeout: 15000
-      });
-      return result.data;
-    }
-
-    // Standard WhatsApp delivery using Body parameter
-    const message = bodyText || values.message ||
-      `IndiaMET 2027: Hi ${values.name || 'Visitor'}, your visitor pass ${values.registrationNumber || ''} is ready. Show this QR at entry: ${values.passUrl || ''}`;
-    const params = new URLSearchParams({
-      To: 'whatsapp:' + toPhone,
-      From: this.whatsAppFrom(),
-      Body: message
-    });
-    const media = mediaUrl || values.mediaUrl;
-    if (media) {
-      params.append('MediaUrl', media);
-    }
-    const result = await axios.post(this.twilioMessagesUrl(), params, {
-      auth: this.twilioAuth(), timeout: 15000
-    });
+  async sendTwilioWhatsApp(phone, kind, values = {}) {
+    const sid = kind === 'otp' ? process.env.TWILIO_WHATSAPP_OTP_CONTENT_SID : (process.env.TWILIO_WHATSAPP_PASS_CONTENT_SID || process.env.TWILIO_WHATSAPP_CONTENT_SID);
+    if (!sid?.trim()) throw new Error('Configure an approved WhatsApp ' + kind + ' Content SID before sending.');
+    const digits = String(phone || '').replace(/\D/g, '');
+    if (!digits) throw new Error('A valid phone number is required for WhatsApp delivery.');
+    const params = new URLSearchParams({ To: 'whatsapp:+' + digits, From: this.whatsAppFrom(), ContentSid: sid.trim(), ContentVariables: JSON.stringify(this.templateVariables(kind, values)) });
+    const result = await axios.post(this.twilioMessagesUrl(), params, { auth: this.twilioAuth(), timeout: 15000 });
     return result.data;
   }
-
   describeError(error) {
     return error?.response?.data?.message || error?.message || 'Failed to send message';
   }
