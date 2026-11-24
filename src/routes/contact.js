@@ -61,6 +61,13 @@ function escapeHtml(value) {
     .replace(/"/g, "&quot;");
 }
 
+function formatEmailValue(value) {
+  if (Array.isArray(value)) return value.map(formatEmailValue).join(", ");
+  if (value && typeof value === "object") return JSON.stringify(value);
+  if (value === null || value === undefined || value === "") return "N/A";
+  return String(value);
+}
+
 async function findRegistrationByCode(code) {
   try {
     const models = await modelFactory.init();
@@ -233,7 +240,7 @@ function renderUserDetailsCard(formType, data = {}) {
         ["state", data.state || "Not provided"],
         ["city", data.city || "Not provided"],
         ["pin", data.pincode || data.pin || data.postalCode || "Not provided"],
-        ["productsector", data.productSector || (Array.isArray(data.productSectors) ? data.productSectors.join(", ") : data.productSectors) || data.sector || data.industry || "N/A"],
+        ["productsector", data.productSector || data.sector || data.industry || "N/A"],
       ];
       break;
 
@@ -458,6 +465,7 @@ function generateInwardTemplate({
   data = {}
 }) {
   const utmRows = [
+    ["Submitted At", data.submittedAt || "N/A"],
     ["utmSource", data.utmSource || data.utm_source || "N/A"],
     ["utmMedium", data.utmMedium || data.utm_medium || "N/A"],
     ["utmCampaign", data.utmCampaign || data.utm_campaign || "N/A"],
@@ -489,7 +497,7 @@ function generateInwardTemplate({
         ["state", data.state || "Not provided"],
         ["city", data.city || "Not provided"],
         ["pin", data.pincode || data.pin || data.postalCode || "Not provided"],
-        ["productsector", data.productSector || data.sector || data.industry || "N/A"],
+        ["productsector", data.productSector || (Array.isArray(data.productSectors) ? data.productSectors.join(", ") : data.productSectors) || data.sector || data.industry || "N/A"],
         ["Interest Level", data.interestLevel || "N/A"],
         ["message", data.message || data.comments || "N/A"],
         ...utmRows
@@ -528,7 +536,7 @@ function generateInwardTemplate({
         ["state", data.state || "Not provided"],
         ["city", data.city || "Not provided"],
         ["pin", data.pincode || data.pin || data.postalCode || "Not provided"],
-        ["productsector", data.productSector || data.sector || data.industry || "N/A"],
+        ["productsector", data.productSector || (Array.isArray(data.productSectors) ? data.productSectors.join(", ") : data.productSectors) || data.sector || data.industry || "N/A"],
         ...utmRows
       ];
       break;
@@ -547,6 +555,10 @@ function generateInwardTemplate({
         ["state", data.state || "Not provided"],
         ["city", data.city || "Not provided"],
         ["pin", data.pincode || data.pin || data.postalCode || "Not provided"],
+        ["GSTIN", data.gstin || "N/A"],
+        ["Product Sectors", Array.isArray(data.productSectors) ? data.productSectors.join(", ") : (data.productSectors || "N/A")],
+        ["Marketing Consent", typeof data.marketingConsent === "boolean" ? (data.marketingConsent ? "Yes" : "No") : "N/A"],
+        ["Privacy Consent", typeof data.privacyConsent === "boolean" ? (data.privacyConsent ? "Yes" : "No") : "N/A"],
         ["Partnership Type", data.partnershipType ? (data.partnershipType.charAt(0).toUpperCase() + data.partnershipType.slice(1)) : (data.sponsorshipType || "N/A")],
         ...utmRows
       ];
@@ -605,6 +617,12 @@ function generateInwardTemplate({
         ...utmRows
       ];
   }
+
+  fieldRows.unshift(["Email", data.email || "Not provided"]);
+  fieldRows = fieldRows.map(([label, value]) => [
+    escapeHtml(label),
+    escapeHtml(formatEmailValue(value)),
+  ]);
 
   const tableRowsHtml = fieldRows.map(([label, value]) => `
     <tr>
@@ -1171,7 +1189,7 @@ router.post("/", async (req, res) => {
 
     // Send notification to admin
     try {
-      const adminEmail = 'pad9742@gmail.com';
+      const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL || 'pad9742@gmail.com';
       console.log(`📧 Sending admin notification to ${adminEmail}`);
 
       // Generate admin email HTML using the same template - FIXED: Removed "None" from template
