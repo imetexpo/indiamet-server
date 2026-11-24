@@ -33,7 +33,7 @@ function readBadgeConfig() {
   } catch (err) {
     console.warn('Could not read badge-design.json:', err.message);
   }
-  return { design: 'design1', updatedAt: null };
+  return { design: 'design2', updatedAt: null };
 }
 
 function writeBadgeConfig(design) {
