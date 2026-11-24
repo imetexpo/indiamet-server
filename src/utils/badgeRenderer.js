@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const QRCode = require('qrcode');
 const cloudinaryService = require('../services/CloudinaryService');
+const { renderVisitorBadgePng } = require('./badgePngRenderer');
 
 const DATA_DIR = path.join(__dirname, '../../data');
 const CONFIG_FILE = path.join(DATA_DIR, 'badge-design.json');
@@ -242,14 +243,12 @@ async function renderSampleSvg(designId) {
 async function uploadBadgeImageToCloudinary(pass, designId = null) {
   try {
     const activeDesign = designId || readBadgeConfig().design || 'design1';
-    const svgContent = await renderVisitorBadgeSvg({
-      visitor: pass,
-      designId: activeDesign,
-      isSample: false,
-    });
+    const fileBuffer = activeDesign === 'design2'
+      ? await renderVisitorBadgePng({ visitor: pass })
+      : Buffer.from(await renderVisitorBadgeSvg({ visitor: pass, designId: activeDesign, isSample: false }), 'utf8');
 
     const publicId = `badge-${pass.registrationNumber || pass.publicCode}-${activeDesign}`;
-    const uploadRes = await cloudinaryService.uploadFile(Buffer.from(svgContent, 'utf8'), {
+    const uploadRes = await cloudinaryService.uploadFile(fileBuffer, {
       folder: 'visitor-passes',
       public_id: publicId,
       format: 'png',

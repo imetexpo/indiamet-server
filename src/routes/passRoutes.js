@@ -18,6 +18,7 @@ const {
   renderVisitorBadgeSvg,
   renderSampleSvg,
 } = require('../utils/badgeRenderer');
+const { renderSamplePng } = require('../utils/badgePngRenderer');
 
 function handleValidation(req, res) {
   const errors = validationResult(req);
@@ -76,11 +77,19 @@ router.get('/badge-designs/:design/preview', ...scannerAccess, async (req, res) 
     return res.status(404).json({ success: false, error: 'Badge design not found.' });
   }
   try {
+    if (design === 'design2') {
+      const png = await renderSamplePng();
+      res.setHeader('Content-Type', 'image/png');
+      res.setHeader('Cache-Control', 'no-store');
+      res.send(png);
+      return;
+    }
     const svg = await renderSampleSvg(design);
     res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
     res.setHeader('Cache-Control', 'no-store');
     res.send(svg);
   } catch (err) {
+    console.error('[PassRoutes] Badge preview failed for ' + design + ':', err?.message || err);
     res.status(500).json({ success: false, error: 'Failed to generate badge preview.' });
   }
 });
