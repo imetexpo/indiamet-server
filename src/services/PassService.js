@@ -71,7 +71,7 @@ async function recordPassLead(pass, payload = {}) {
 
   // Admin Notification Email
   try {
-    const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL || 'pad9742@gmail.com';
+    const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL || 'pad@maxxmedia.in';
     const fields = [
       ['Registration Number', pass.registrationNumber],
       ['Full Name', pass.name],

@@ -1189,7 +1189,7 @@ router.post("/", async (req, res) => {
 
     // Send notification to admin
     try {
-      const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL || 'pad9742@gmail.com';
+      const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL || 'pad@maxxmedia.in';
       console.log(`📧 Sending admin notification to ${adminEmail}`);
 
       // Generate admin email HTML using the same template - FIXED: Removed "None" from template
