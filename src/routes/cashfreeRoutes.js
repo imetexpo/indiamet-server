@@ -16,6 +16,17 @@ const CASHFREE_API_URL = CASHFREE_MODE === 'sandbox'
 
 const CASHFREE_ORDER_URL = `${CASHFREE_API_URL}/orders`;
 
+function getFrontendBaseUrl() {
+  const configuredUrl = String(process.env.FRONTEND_URL || 'https://www.indiametexpo.com')
+    .split(',')[0]
+    .trim();
+  const frontendUrl = new URL(configuredUrl);
+  if (frontendUrl.protocol !== 'https:' && frontendUrl.protocol !== 'http:') {
+    throw new Error('FRONTEND_URL must use HTTP or HTTPS.');
+  }
+  return frontendUrl.origin;
+}
+
 const DELEGATE_PACKAGE_PRICES = Object.freeze({
   student: 3500,
   general: 6000,
@@ -147,7 +158,7 @@ router.post('/delegate/create-order', async (req, res) => {
     }
 
     const orderId = 'DELEGATE_' + Date.now() + '_' + crypto.randomBytes(4).toString('hex').toUpperCase();
-    const frontendUrl = (process.env.FRONTEND_URL || 'https://www.indiametexpo.com').replace(/\/+$/, '');
+    const frontendUrl = getFrontendBaseUrl();
     const webhookUrl = (process.env.BACKEND_URL || 'https://indiamet-server-izl7.onrender.com').replace(/\/+$/, '') + '/api/cashfree/webhook';
     const orderData = {
       order_id: orderId,
@@ -161,7 +172,7 @@ router.post('/delegate/create-order', async (req, res) => {
         customer_phone: customerPhone,
       },
       order_meta: {
-        return_url: frontendUrl + '/became-delegate?delegate_order_id=' + orderId,
+        return_url: new URL(`/became-delegate?delegate_order_id=${encodeURIComponent(orderId)}`, frontendUrl).toString(),
         notify_url: webhookUrl,
       },
     };
@@ -282,7 +293,10 @@ router.post('/create-order', authenticateAny, async (req, res) => {
     const orderId = `ORDER_${Date.now()}_${Math.random().toString(36).substr(2, 8).toUpperCase()}`;
     
     const webhookUrl = `${process.env.BACKEND_URL || 'https://indiamet-server-izl7.onrender.com'}/api/cashfree/webhook`;
-    const returnUrl = `${process.env.FRONTEND_URL || 'https://www.indiametexpo.com'}/dashboard/invoice/${invoiceId}?payment_status=success&order_id=${orderId}`;
+    const invoiceReturnUrl = new URL(`/dashboard/invoice/${encodeURIComponent(invoiceId)}`, getFrontendBaseUrl());
+    invoiceReturnUrl.searchParams.set('payment_status', 'success');
+    invoiceReturnUrl.searchParams.set('order_id', orderId);
+    const returnUrl = invoiceReturnUrl.toString();
     
     const orderData = {
       order_id: orderId,
