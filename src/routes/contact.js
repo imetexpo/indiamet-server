@@ -61,6 +61,13 @@ function escapeHtml(value) {
     .replace(/"/g, "&quot;");
 }
 
+function formatEmailValue(value) {
+  if (Array.isArray(value)) return value.map(formatEmailValue).join(", ");
+  if (value && typeof value === "object") return JSON.stringify(value);
+  if (value === null || value === undefined || value === "") return "N/A";
+  return String(value);
+}
+
 async function findRegistrationByCode(code) {
   try {
     const models = await modelFactory.init();
@@ -204,6 +211,7 @@ function renderUserDetailsCard(formType, data = {}) {
         ["lastname", data.lastName || (data.name?.includes(" ") ? data.name.split(" ").slice(1).join(" ") : "") || "Not provided"],
         ["companyname", data.companyName || data.company || "Not provided"],
         ["jobtittle", data.jobTitle || data.designation || "Not provided"],
+        ["Email", data.email || "Not provided"],
         ["phone number", data.phone || data.mobile || "Not provided"],
         ["website", data.companyWebsite || data.website || "N/A"],
         ["address", data.address || "Not provided"],
@@ -212,7 +220,7 @@ function renderUserDetailsCard(formType, data = {}) {
         ["city", data.city || "Not provided"],
         ["pin", data.pincode || data.pin || data.postalCode || "Not provided"],
         ["productsector", data.productSector || data.sector || data.industry || "N/A"],
-        ["inttestlevel", data.interestLevel || "N/A"],
+        ["Interest Level", data.interestLevel || "N/A"],
         ["message", data.message || data.comments || "N/A"],
       ];
       break;
@@ -224,7 +232,7 @@ function renderUserDetailsCard(formType, data = {}) {
         ["lastname", data.lastName || (data.name?.includes(" ") ? data.name.split(" ").slice(1).join(" ") : "") || "Not provided"],
         ["companyname", data.companyName || data.company || "Not provided"],
         ["jobtittle", data.jobTitle || data.designation || "Not provided"],
-        ["email", data.email || "Not provided"],
+        ["Email", data.email || "Not provided"],
         ["phone number", data.phone || data.mobile || "Not provided"],
         ["website", data.website || data.companyWebsite || "N/A"],
         ["address", data.address || "Not provided"],
@@ -232,7 +240,7 @@ function renderUserDetailsCard(formType, data = {}) {
         ["state", data.state || "Not provided"],
         ["city", data.city || "Not provided"],
         ["pin", data.pincode || data.pin || data.postalCode || "Not provided"],
-        ["productsector", data.productSector || (Array.isArray(data.productSectors) ? data.productSectors.join(", ") : data.productSectors) || data.sector || data.industry || "N/A"],
+        ["productsector", data.productSector || data.sector || data.industry || "N/A"],
       ];
       break;
 
@@ -243,7 +251,7 @@ function renderUserDetailsCard(formType, data = {}) {
         ["lastname", data.lastName || (data.name?.includes(" ") ? data.name.split(" ").slice(1).join(" ") : "") || "Not provided"],
         ["companyname", data.companyName || data.company || "Not provided"],
         ["jobtittle", data.jobTitle || data.designation || "Not provided"],
-        ["email", data.email || "Not provided"],
+        ["Email", data.email || "Not provided"],
         ["phone number", data.phone || data.mobile || "Not provided"],
         ["website", data.website || data.companyWebsite || "N/A"],
         ["address", data.address || "Not provided"],
@@ -265,7 +273,7 @@ function renderUserDetailsCard(formType, data = {}) {
         ["lastname", data.lastName || (data.name?.includes(" ") ? data.name.split(" ").slice(1).join(" ") : "") || "Not provided"],
         ["companyname", data.companyName || data.company || "Not provided"],
         ["jobtittle", data.jobTitle || data.designation || "Not provided"],
-        ["mail", data.email || "Not provided"],
+        ["Email", data.email || "Not provided"],
         ["phone number", data.phone || data.mobile || "Not provided"],
         ["website", data.website || data.companyWebsite || "N/A"],
         ["address", data.address || [data.city, data.state, data.country].filter(Boolean).join(", ") || "Not provided"],
@@ -283,6 +291,7 @@ function renderUserDetailsCard(formType, data = {}) {
       fieldRows = [
         ["Full Name", [data.firstName, data.lastName].filter(Boolean).join(" ").trim() || data.name || data.fullName || "Not provided"],
         ["companyname", data.companyName || data.company || "Not provided"],
+        ["Email", data.email || "Not provided"],
         ["Media", data.media || data.mediaPartner || data.isMedia || data.industry || "N/A"],
         ["phone number", data.phone || data.mobile || "Not provided"],
         ["website", data.website || data.companyWebsite || "N/A"],
@@ -320,6 +329,7 @@ function renderUserDetailsCard(formType, data = {}) {
         ["Name", [data.firstName, data.lastName].filter(Boolean).join(" ").trim() || data.name || data.contactPerson || "Not provided"],
         ["Company", data.companyName || data.company || "Not provided"],
         ["Job Title", data.jobTitle || data.designation || "Not provided"],
+        ["Email", data.email || "Not provided"],
         ["Phone Number", data.phone || data.mobile || "Not provided"],
         ["Address", data.address || "Not provided"],
       ];
@@ -455,6 +465,7 @@ function generateInwardTemplate({
   data = {}
 }) {
   const utmRows = [
+    ["Submitted At", data.submittedAt || "N/A"],
     ["utmSource", data.utmSource || data.utm_source || "N/A"],
     ["utmMedium", data.utmMedium || data.utm_medium || "N/A"],
     ["utmCampaign", data.utmCampaign || data.utm_campaign || "N/A"],
@@ -486,8 +497,8 @@ function generateInwardTemplate({
         ["state", data.state || "Not provided"],
         ["city", data.city || "Not provided"],
         ["pin", data.pincode || data.pin || data.postalCode || "Not provided"],
-        ["productsector", data.productSector || data.sector || data.industry || "N/A"],
-        ["inttestlevel", data.interestLevel || "N/A"],
+        ["productsector", data.productSector || (Array.isArray(data.productSectors) ? data.productSectors.join(", ") : data.productSectors) || data.sector || data.industry || "N/A"],
+        ["Interest Level", data.interestLevel || "N/A"],
         ["message", data.message || data.comments || "N/A"],
         ...utmRows
       ];
@@ -525,7 +536,7 @@ function generateInwardTemplate({
         ["state", data.state || "Not provided"],
         ["city", data.city || "Not provided"],
         ["pin", data.pincode || data.pin || data.postalCode || "Not provided"],
-        ["productsector", data.productSector || data.sector || data.industry || "N/A"],
+        ["productsector", data.productSector || (Array.isArray(data.productSectors) ? data.productSectors.join(", ") : data.productSectors) || data.sector || data.industry || "N/A"],
         ...utmRows
       ];
       break;
@@ -544,6 +555,10 @@ function generateInwardTemplate({
         ["state", data.state || "Not provided"],
         ["city", data.city || "Not provided"],
         ["pin", data.pincode || data.pin || data.postalCode || "Not provided"],
+        ["GSTIN", data.gstin || "N/A"],
+        ["Product Sectors", Array.isArray(data.productSectors) ? data.productSectors.join(", ") : (data.productSectors || "N/A")],
+        ["Marketing Consent", typeof data.marketingConsent === "boolean" ? (data.marketingConsent ? "Yes" : "No") : "N/A"],
+        ["Privacy Consent", typeof data.privacyConsent === "boolean" ? (data.privacyConsent ? "Yes" : "No") : "N/A"],
         ["Partnership Type", data.partnershipType ? (data.partnershipType.charAt(0).toUpperCase() + data.partnershipType.slice(1)) : (data.sponsorshipType || "N/A")],
         ...utmRows
       ];
@@ -603,6 +618,12 @@ function generateInwardTemplate({
         ...utmRows
       ];
   }
+
+  fieldRows.unshift(["Email", data.email || "Not provided"]);
+  fieldRows = fieldRows.map(([label, value]) => [
+    escapeHtml(label),
+    escapeHtml(formatEmailValue(value)),
+  ]);
 
   const tableRowsHtml = fieldRows.map(([label, value]) => `
     <tr>
@@ -1141,10 +1162,12 @@ router.post("/", async (req, res) => {
     // Send email to user with their submitted details
     console.log(`📧 Sending email to user: ${data.email}`);
 
+    let userEmailResult;
+
     // Prepare email options with attachments for QR code
     if ((formType === "visitor-registration" || formType === "delegate-registration") && qrCodeBuffer) {
       // Use the attachment method from EmailService
-      await emailService.sendEmailWithAttachment({
+      userEmailResult = await emailService.sendEmailWithAttachment({
         to: data.email,
         subject: subject,
         html: html,
@@ -1156,13 +1179,18 @@ router.post("/", async (req, res) => {
         }
       });
     } else {
-      await emailService.sendEmail(data.email, subject, html);
+      userEmailResult = await emailService.sendEmail(data.email, subject, html);
     }
-    console.log(`✅ User email sent successfully to ${data.email}`);
+    const emailSent = userEmailResult?.success === true;
+    if (emailSent) {
+      console.log(`✅ User email sent successfully to ${data.email}`);
+    } else {
+      console.error("❌ User confirmation email failed:", userEmailResult?.error || "Unknown email error");
+    }
 
     // Send notification to admin
     try {
-      const adminEmail = 'pad9742@gmail.com';
+      const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL || 'pad@maxxmedia.in';
       console.log(`📧 Sending admin notification to ${adminEmail}`);
 
       // Generate admin email HTML using the same template - FIXED: Removed "None" from template
@@ -1249,11 +1277,14 @@ router.post("/", async (req, res) => {
           });
       }
 
-      await emailService.sendEmail(
+      const adminEmailResult = await emailService.sendEmail(
         adminEmail,
         adminSubject,
         adminHtml
       );
+      if (!adminEmailResult?.success) {
+        throw new Error(adminEmailResult?.error || "Admin notification could not be sent");
+      }
       console.log(`✅ Admin notification sent to ${adminEmail}`);
     } catch (adminError) {
       console.error("❌ Admin notification failed:", adminError);
@@ -1261,11 +1292,22 @@ router.post("/", async (req, res) => {
     }
 
     if (submission) {
-      await submission.update({ emailStatus: 'sent' }).catch(() => null);
+      await submission.update({ emailStatus: emailSent ? 'sent' : 'failed' }).catch(() => null);
+    }
+
+    if (!emailSent) {
+      return res.status(502).json({
+        success: false,
+        emailSent: false,
+        message: "Your details were received, but the confirmation email could not be sent. Please contact pad@maxxmedia.in for help.",
+        visitorCode: visitorCode || null,
+        ...(issued ? { pass: issued.pass, delivery: issued.delivery } : {})
+      });
     }
 
     return res.status(200).json({
       success: true,
+      emailSent: true,
       message: "Form submitted successfully. Please check your email for confirmation.",
       visitorCode: visitorCode || null,
       ...(issued ? { pass: issued.pass, delivery: issued.delivery } : {})
@@ -1292,9 +1334,11 @@ router.get("/test", (req, res) => {
     success: true,
     message: "Contact API is working",
     timestamp: new Date().toISOString(),
+    provider: "resend",
     environment: {
-      hasSendGridKey: !!process.env.SENDGRID_API_KEY,
-      hasSendGridFrom: !!process.env.SENDGRID_FROM
+      hasResendKey: !!process.env.RESEND_API_KEY,
+      hasResendFrom: !!process.env.RESEND_FROM,
+      emailServiceInitialized: emailService.initialized
     }
   });
 });

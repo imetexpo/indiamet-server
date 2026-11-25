@@ -18,6 +18,7 @@ const {
   renderVisitorBadgeSvg,
   renderSampleSvg,
 } = require('../utils/badgeRenderer');
+const { renderSamplePng } = require('../utils/badgePngRenderer');
 
 function handleValidation(req, res) {
   const errors = validationResult(req);
@@ -76,11 +77,19 @@ router.get('/badge-designs/:design/preview', ...scannerAccess, async (req, res) 
     return res.status(404).json({ success: false, error: 'Badge design not found.' });
   }
   try {
+    if (design === 'design2') {
+      const png = await renderSamplePng();
+      res.setHeader('Content-Type', 'image/png');
+      res.setHeader('Cache-Control', 'no-store');
+      res.send(png);
+      return;
+    }
     const svg = await renderSampleSvg(design);
     res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
     res.setHeader('Cache-Control', 'no-store');
     res.send(svg);
   } catch (err) {
+    console.error('[PassRoutes] Badge preview failed for ' + design + ':', err?.message || err);
     res.status(500).json({ success: false, error: 'Failed to generate badge preview.' });
   }
 });
@@ -191,6 +200,7 @@ router.post('/resend-pass', async (req, res) => {
 router.get('/admin/registrations', ...scannerAccess, async (req, res) => {
   try {
     const VisitorPass = modelFactory.getModel('VisitorPass');
+    const VisitorPassCmsSync = modelFactory.getModel('VisitorPassCmsSync');
     const page = Math.max(1, parseInt(req.query.page, 10) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 25));
     const search = String(req.query.search || '').trim();
@@ -212,6 +222,7 @@ router.get('/admin/registrations', ...scannerAccess, async (req, res) => {
 
     const { rows, count } = await VisitorPass.findAndCountAll({
       where: { [Op.and]: conditions },
+      include: [{ model: VisitorPassCmsSync, as: 'cmsSync', attributes: ['status', 'attempts', 'leadId', 'lastError', 'nextAttemptAt', 'syncedAt'], required: false }],
       order: [['createdAt', 'DESC'], ['id', 'DESC']],
       limit,
       offset: (page - 1) * limit,
@@ -225,7 +236,8 @@ router.get('/admin/registrations', ...scannerAccess, async (req, res) => {
 
     const registrations = rows.map((row) => {
       const plain = row.toJSON();
-      const isSynced = Boolean(row.cmsSyncedAt || row.cmsLeadId);
+      const sync = plain.cmsSync || {};
+      const isSynced = sync.status === 'synced' || Boolean(sync.syncedAt || sync.leadId || row.cmsSyncedAt || row.cmsLeadId);
       return {
         ...plain,
         interests: Array.isArray(row.interests) ? row.interests : [],
@@ -233,12 +245,12 @@ router.get('/admin/registrations', ...scannerAccess, async (req, res) => {
         badgeUrl: `${backend}/api/passes/${encodeURIComponent(row.publicCode)}/badge?design=${activeDesign}`,
         badgeDesign: activeDesign,
         cmsSync: {
-          status: isSynced ? 'synced' : (row.cmsStatus || 'not_queued'),
-          leadId: row.cmsLeadId || null,
-          syncedAt: row.cmsSyncedAt ? row.cmsSyncedAt.toISOString() : null,
-          attempts: isSynced ? 1 : (row.cmsStatus === 'error' ? 1 : 0),
-          lastError: row.cmsError || null,
-          nextAttemptAt: null,
+          status: sync.status || (isSynced ? 'synced' : (row.cmsStatus || 'not_queued')),
+          leadId: sync.leadId || row.cmsLeadId || null,
+          syncedAt: sync.syncedAt ? new Date(sync.syncedAt).toISOString() : (row.cmsSyncedAt ? row.cmsSyncedAt.toISOString() : null),
+          attempts: sync.attempts ?? (isSynced ? 1 : (row.cmsStatus === 'error' ? 1 : 0)),
+          lastError: sync.lastError || row.cmsError || null,
+          nextAttemptAt: sync.nextAttemptAt ? new Date(sync.nextAttemptAt).toISOString() : null,
         },
       };
     });
@@ -250,7 +262,7 @@ router.get('/admin/registrations', ...scannerAccess, async (req, res) => {
       page,
       limit,
       totalPages: Math.max(1, Math.ceil(count / limit)),
-      cmsConfigured: true,
+      cmsConfigured: require('../services/VisitorPassCmsSyncService').isConfigured(),
     });
   } catch (error) {
     handleError(res, error);

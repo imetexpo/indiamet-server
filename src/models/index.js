@@ -34,6 +34,8 @@ const modelFactories = {
     return factory(database.getConnection('mysql'));
   },
 
+  VisitorPassCmsSync: () => require('./mysql/VisitorPassCmsSync')(database.getConnection('mysql')),
+
   VisitorPassScan: () => {
     const factory = require('./mysql/VisitorPassScan');
     return factory(database.getConnection('mysql'));
