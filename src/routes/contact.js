@@ -569,6 +569,7 @@ function generateInwardTemplate({
         ["Full Name", [data.firstName, data.lastName].filter(Boolean).join(" ").trim() || data.name || data.fullName || "Not provided"],
         ["companyname", data.companyName || data.company || "Not provided"],
         ["jobtittle", data.jobTitle || data.designation || "Not provided"],
+        ["Email", data.email || "Not provided"],
         ["phone number", data.phone || data.mobile || "Not provided"],
         ["website", data.website || data.companyWebsite || "N/A"],
         ["address", data.address || "Not provided"],
