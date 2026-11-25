@@ -16,6 +16,13 @@ const CASHFREE_API_URL = CASHFREE_MODE === 'sandbox'
 
 const CASHFREE_ORDER_URL = `${CASHFREE_API_URL}/orders`;
 
+const DELEGATE_PACKAGE_PRICES = Object.freeze({
+  student: 3500,
+  general: 6000,
+  group: 15000,
+});
+
+
 console.log('🔧 Cashfree Configuration:');
 console.log(`  Mode: ${CASHFREE_MODE}`);
 console.log(`  API URL: ${CASHFREE_API_URL}`);
@@ -121,6 +128,134 @@ router.post('/webhook', async (req, res) => {
   }
 });
 
+
+// Guest checkout for paid IndiaMET delegate packages.
+router.post('/delegate/create-order', async (req, res) => {
+  try {
+    const { package: packageKey, customerDetails = {} } = req.body || {};
+    const amount = DELEGATE_PACKAGE_PRICES[String(packageKey || '').toLowerCase()];
+    const customerName = String(customerDetails.customerName || '').trim().slice(0, 100);
+    const customerEmail = String(customerDetails.customerEmail || '').trim().toLowerCase();
+    const customerPhone = String(customerDetails.customerPhone || '').replace(/[^\d]/g, '');
+
+    if (!amount) return res.status(400).json({ success: false, error: 'Choose a valid delegate package.' });
+    if (!customerName || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail) || customerPhone.length < 8 || customerPhone.length > 15) {
+      return res.status(400).json({ success: false, error: 'Valid delegate name, email, and phone are required.' });
+    }
+    if (!CASHFREE_APP_ID || !CASHFREE_SECRET_KEY) {
+      return res.status(500).json({ success: false, error: 'Payment gateway not configured.' });
+    }
+
+    const orderId = 'DELEGATE_' + Date.now() + '_' + crypto.randomBytes(4).toString('hex').toUpperCase();
+    const frontendUrl = (process.env.FRONTEND_URL || 'https://www.indiametexpo.com').replace(/\/+$/, '');
+    const webhookUrl = (process.env.BACKEND_URL || 'https://indiamet-server-izl7.onrender.com').replace(/\/+$/, '') + '/api/cashfree/webhook';
+    const orderData = {
+      order_id: orderId,
+      order_amount: amount,
+      order_currency: 'INR',
+      order_note: 'IndiaMET 2027 ' + String(packageKey).toLowerCase() + ' delegate pass',
+      customer_details: {
+        customer_id: 'DEL_' + Date.now(),
+        customer_name: customerName,
+        customer_email: customerEmail,
+        customer_phone: customerPhone,
+      },
+      order_meta: {
+        return_url: frontendUrl + '/became-delegate?delegate_order_id=' + orderId,
+        notify_url: webhookUrl,
+      },
+    };
+    const response = await axios.post(CASHFREE_ORDER_URL, orderData, {
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-version': '2023-08-01',
+        'x-client-id': CASHFREE_APP_ID,
+        'x-client-secret': CASHFREE_SECRET_KEY,
+      },
+    });
+
+    const sequelize = require('../config/database').getConnection('mysql');
+    await sequelize.query("CREATE TABLE IF NOT EXISTS cashfree_orders (id VARCHAR(36) PRIMARY KEY, order_id VARCHAR(100) UNIQUE NOT NULL, invoice_id VARCHAR(36), requirement_id VARCHAR(36), exhibitor_id VARCHAR(36), amount DECIMAL(10,2), order_status VARCHAR(50) DEFAULT 'PENDING', payment_id VARCHAR(100), created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, INDEX idx_order_id (order_id), INDEX idx_invoice_id (invoice_id))");
+    await sequelize.query(
+      'INSERT INTO cashfree_orders (id, order_id, invoice_id, requirement_id, exhibitor_id, amount, order_status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      {
+        replacements: [
+          crypto.randomUUID(),
+          orderId,
+          'delegate-' + String(packageKey).toLowerCase(),
+          'delegate-' + String(packageKey).toLowerCase(),
+          'delegate',
+          amount,
+          'PENDING',
+          new Date(),
+          new Date(),
+        ],
+      },
+    );
+
+    return res.json({
+      success: true,
+      data: {
+        orderId: response.data.order_id,
+        paymentSessionId: response.data.payment_session_id,
+        orderAmount: response.data.order_amount,
+        environment: CASHFREE_MODE,
+      },
+    });
+  } catch (error) {
+    console.error('Delegate Cashfree order error:', error.response?.data || error.message);
+    return res.status(error.response?.status || 500).json({
+      success: false,
+      error: error.response?.data?.message || error.message || 'Could not create payment order.',
+    });
+  }
+});
+
+router.get('/delegate/verify-payment/:orderId', async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const sequelize = require('../config/database').getConnection('mysql');
+    const [orders] = await sequelize.query(
+      'SELECT order_id, invoice_id, amount FROM cashfree_orders WHERE order_id = ? LIMIT 1',
+      { replacements: [orderId] },
+    );
+    const order = orders[0];
+    if (!order || !String(order.invoice_id || '').startsWith('delegate-')) {
+      return res.status(404).json({ success: false, error: 'Delegate payment order not found.' });
+    }
+
+    const response = await axios.get(CASHFREE_API_URL + '/orders/' + encodeURIComponent(orderId) + '/payments', {
+      headers: {
+        'x-api-version': '2023-08-01',
+        'x-client-id': CASHFREE_APP_ID,
+        'x-client-secret': CASHFREE_SECRET_KEY,
+      },
+    });
+    const payments = Array.isArray(response.data) ? response.data : response.data?.payments || [];
+    const successfulPayment = payments.find((payment) => payment.payment_status === 'SUCCESS');
+    if (!successfulPayment) {
+      const status = payments[0]?.payment_status || 'PENDING';
+      return res.json({ success: true, data: { paymentStatus: status, orderId } });
+    }
+
+    await sequelize.query(
+      'UPDATE cashfree_orders SET order_status = ?, payment_id = ?, updated_at = ? WHERE order_id = ?',
+      { replacements: ['SUCCESS', successfulPayment.cf_payment_id || null, new Date(), orderId] },
+    );
+    return res.json({
+      success: true,
+      data: { paymentStatus: 'SUCCESS', orderId, paymentId: successfulPayment.cf_payment_id },
+    });
+  } catch (error) {
+    console.error('Delegate Cashfree verification error:', error.response?.data || error.message);
+    return res.status(error.response?.status || 500).json({
+      success: false,
+      error: error.response?.data?.message || error.message || 'Could not verify payment.',
+    });
+  }
+});
+
+
 // Create Cashfree Order
 router.post('/create-order', authenticateAny, async (req, res) => {
   try {
@@ -146,7 +281,7 @@ router.post('/create-order', authenticateAny, async (req, res) => {
 
     const orderId = `ORDER_${Date.now()}_${Math.random().toString(36).substr(2, 8).toUpperCase()}`;
     
-    const webhookUrl = `${process.env.BACKEND_URL || 'https://indiamet-server.onrender.com'}/api/cashfree/webhook`;
+    const webhookUrl = `${process.env.BACKEND_URL || 'https://indiamet-server-izl7.onrender.com'}/api/cashfree/webhook`;
     const returnUrl = `${process.env.FRONTEND_URL || 'https://www.indiametexpo.com'}/dashboard/invoice/${invoiceId}?payment_status=success&order_id=${orderId}`;
     
     const orderData = {

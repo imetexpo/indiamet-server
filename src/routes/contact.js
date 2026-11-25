@@ -321,6 +321,8 @@ function renderUserDetailsCard(formType, data = {}) {
         ["Visitorcode", data.visitorCode || "N/A"],
         ["promocode", data.promocode || data.promoCode || "N/A"],
         ["Select Package", data.package || "N/A"],
+        ["Payment status", data.paymentStatus || "N/A"],
+        ["Payment order ID", data.paymentOrderId || "N/A"],
       ];
       break;
 
@@ -906,6 +908,30 @@ router.post("/", async (req, res) => {
       });
     }
 
+    
+    if (formType === 'delegate-registration') {
+      const packageKey = String(data.package || '').toLowerCase();
+      const packageAmounts = { student: 3500, general: 6000, group: 15000 };
+      const expectedAmount = packageAmounts[packageKey];
+      const paymentOrderId = String(data.paymentOrderId || '');
+      if (!expectedAmount || !paymentOrderId) {
+        return res.status(402).json({ success: false, message: 'Complete payment for a valid delegate package before registering.' });
+      }
+      const sequelize = require('../config/database').getConnection('mysql');
+      const [orders] = await sequelize.query(
+        'SELECT order_id, invoice_id, amount, order_status FROM cashfree_orders WHERE order_id = ? LIMIT 1',
+        { replacements: [paymentOrderId] },
+      );
+      const order = orders[0];
+      if (!order ||
+          String(order.order_status || '').toUpperCase() !== 'SUCCESS' ||
+          order.invoice_id !== 'delegate-' + packageKey ||
+          Math.abs(Number(order.amount) - expectedAmount) > 0.01) {
+        return res.status(402).json({ success: false, message: 'Payment could not be verified for this delegate package.' });
+      }
+    }
+
+    
     // Log received data for debugging
     console.log(`📝 Received ${formType} form submission:`, {
       email: data.email,
