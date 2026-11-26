@@ -1,7 +1,7 @@
 // services/DashboardService.js
 const { Op } = require('sequelize');
 const modelFactory = require('../models');
-const { getVisitorStatsDetailed } = require('./googleAnalytics');
+const visitorService = require('./VisitorService');
 
 class DashboardService {
   constructor() {
@@ -149,7 +149,7 @@ class DashboardService {
       const bySector = await models.Exhibitor.findAll({
         attributes: [
           'sector',
-          [models.sequelize.fn('COUNT', models.sequelize.col('id')), 'count']
+          [models.Exhibitor.sequelize.fn('COUNT', models.Exhibitor.sequelize.col('id')), 'count']
         ],
         where: {
           sector: { [Op.ne]: null }
@@ -181,7 +181,7 @@ class DashboardService {
 
 async getVisitorStats(models) {
   try {
-    const stats = await getVisitorStatsDetailed();
+    const stats = await visitorService.getVisitorStats();
 
     return {
       total: stats.total,
@@ -190,7 +190,7 @@ async getVisitorStats(models) {
       month: stats.month,
       last7Days: stats.last7Days,
       topCompanies: stats.topCompanies,
-      source: 'google-analytics'
+      source: 'registration-database'
     };
 
   } catch (error) {
@@ -226,7 +226,7 @@ async getVisitorStats(models) {
       const monthRevenue = await models.Invoice.sum('amount', {
         where: {
           status: 'paid',
-          createdAt: { [Op.gte]: monthStart }
+          issueDate: { [Op.gte]: monthStart }
         }
       }) || 0;
       
@@ -390,7 +390,9 @@ async getVisitorStats(models) {
       // Check database connection
       let databaseStatus = 'OK';
       try {
-        await models.sequelize.authenticate();
+        const sequelize = models.User?.sequelize || models.Exhibitor?.sequelize;
+        if (!sequelize) throw new Error('No initialized SQL model is available');
+        await sequelize.authenticate();
       } catch (err) {
         databaseStatus = 'ERROR';
       }

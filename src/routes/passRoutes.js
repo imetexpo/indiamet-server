@@ -305,7 +305,7 @@ router.get('/admin/delegate-registrations', ...scannerAccess, async (req, res) =
           [Op.and]: sequelize.where(
             sequelize.fn(
               'JSON_UNQUOTE',
-              sequelize.fn('JSON_EXTRACT', sequelize.col('payload'), '$.visitorCode')
+              sequelize.fn('JSON_EXTRACT', sequelize.col('payload'), sequelize.literal("'$.visitorCode'"))
             ),
             { [Op.in]: registrationNumbers }
           ),
