@@ -911,7 +911,7 @@ router.post("/", async (req, res) => {
     
     if (formType === 'delegate-registration') {
       const packageKey = String(data.package || '').toLowerCase();
-      const packageAmounts = { student: 3500, general: 6000, group: 15000 };
+      const packageAmounts = { student: 1, general: 6000, group: 15000 };
       const expectedAmount = packageAmounts[packageKey];
       const paymentOrderId = String(data.paymentOrderId || '');
       if (!expectedAmount || !paymentOrderId) {
