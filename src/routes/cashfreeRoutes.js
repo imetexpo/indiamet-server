@@ -28,7 +28,7 @@ function getFrontendBaseUrl() {
 }
 
 const DELEGATE_PACKAGE_PRICES = Object.freeze({
-  student: 3500,
+  student: 1,
   general: 6000,
   group: 15000,
 });

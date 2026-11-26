@@ -269,6 +269,97 @@ router.get('/admin/registrations', ...scannerAccess, async (req, res) => {
   }
 });
 
+router.get('/admin/delegate-registrations', ...scannerAccess, async (req, res) => {
+  try {
+    const VisitorPass = modelFactory.getModel('VisitorPass');
+    const ContactSubmission = modelFactory.getModel('ContactSubmission');
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 25));
+    const search = String(req.query.search || '').trim();
+    const status = String(req.query.status || '').trim();
+    const conditions = [{ source: 'contact:delegate-registration' }];
+
+    if (status && status !== 'all') conditions.push({ status });
+    if (search) {
+      conditions.push({
+        [Op.or]: ['name', 'company', 'email', 'phone', 'registrationNumber'].map((field) => ({
+          [field]: { [Op.like]: '%' + search + '%' },
+        })),
+      });
+    }
+
+    const { rows, count } = await VisitorPass.findAndCountAll({
+      where: { [Op.and]: conditions },
+      order: [['createdAt', 'DESC'], ['id', 'DESC']],
+      limit,
+      offset: (page - 1) * limit,
+    });
+
+    const registrationNumbers = rows.map((row) => row.registrationNumber);
+    const packageByRegistration = new Map();
+    if (registrationNumbers.length) {
+      const sequelize = ContactSubmission.sequelize;
+      const submissions = await ContactSubmission.findAll({
+        where: {
+          formType: 'delegate-registration',
+          [Op.and]: sequelize.where(
+            sequelize.fn(
+              'JSON_UNQUOTE',
+              sequelize.fn('JSON_EXTRACT', sequelize.col('payload'), '$.visitorCode')
+            ),
+            { [Op.in]: registrationNumbers }
+          ),
+        },
+        attributes: ['payload'],
+        order: [['createdAt', 'DESC']],
+      });
+
+      for (const submission of submissions) {
+        let payload = submission.payload;
+        if (typeof payload === 'string') {
+          try {
+            payload = JSON.parse(payload);
+          } catch {
+            payload = null;
+          }
+        }
+        const registrationNumber = payload?.visitorCode;
+        if (registrationNumbers.includes(registrationNumber) && !packageByRegistration.has(registrationNumber)) {
+          packageByRegistration.set(registrationNumber, String(payload?.package || '').toLowerCase());
+        }
+      }
+    }
+
+    const packageAmounts = { student: 3500, general: 6000, group: 15000 };
+    const frontend = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/+$/, '');
+    const backend = (process.env.PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:5000')
+      .replace(/\/+$/, '')
+      .replace(/\/api$/, '');
+
+    const registrations = rows.map((row) => {
+      const registration = row.toJSON();
+      const packageKey = packageByRegistration.get(registration.registrationNumber) || null;
+      return {
+        ...registration,
+        package: packageKey,
+        packageAmount: packageKey ? packageAmounts[packageKey] || null : null,
+        passUrl: frontend + '/passes/view/' + encodeURIComponent(registration.publicCode),
+        badgeUrl: backend + '/api/passes/' + encodeURIComponent(registration.publicCode) + '/badge?design=' + (readBadgeConfig().design || 'design1'),
+      };
+    });
+
+    res.json({
+      success: true,
+      registrations,
+      total: count,
+      page,
+      limit,
+      totalPages: Math.max(1, Math.ceil(count / limit)),
+    });
+  } catch (error) {
+    handleError(res, error);
+  }
+});
 router.get('/scanner/summary', ...scannerAccess, async (req, res) => {
   try {
     const result = await passService.scannerSummary();
