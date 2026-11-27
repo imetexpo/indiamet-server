@@ -1,9 +1,41 @@
 const express = require("express");
 const router = express.Router();
+const rateLimit = require("express-rate-limit");
+const { isIP } = require("node:net");
+const { timingSafeEqual } = require("node:crypto");
 const emailService = require("../services/EmailService");
 const passService = require("../services/PassService");
 const modelFactory = require("../models");
 const QRCode = require('qrcode');
+
+const RECAPTCHA_ACTION_BY_FORM_TYPE = Object.freeze({
+  "sponsor-registration": "sponsor_registration",
+  "partner-registration": "sponsor_registration",
+  "exhibitor-enquiry": "exhibitor_registration",
+  "event-brochure": "brochure_download",
+});
+
+const recaptchaAssessmentLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: "Please try again later." },
+});
+
+function matchesRecaptchaProxySecret(candidate, expected) {
+  if (typeof candidate !== "string" || !candidate || !expected) return false;
+  const candidateBuffer = Buffer.from(candidate, "utf8");
+  const expectedBuffer = Buffer.from(expected, "utf8");
+  return candidateBuffer.length === expectedBuffer.length &&
+    timingSafeEqual(candidateBuffer, expectedBuffer);
+}
+
+function normalizeRecaptchaHostname(hostname) {
+  if (typeof hostname !== "string") return "";
+  const normalized = hostname.trim().toLowerCase();
+  return normalized.endsWith(".") ? normalized.slice(0, -1) : normalized;
+}
 
 let contactTableReady = false;
 
@@ -892,6 +924,102 @@ router.post("/visitor/checkin", async (req, res) => {
   }
 });
 
+
+router.post("/recaptcha/assess", recaptchaAssessmentLimiter, async (req, res) => {
+  const expectedProxySecret = process.env.RECAPTCHA_PROXY_SECRET;
+  if (!expectedProxySecret) {
+    return res.status(503).json({
+      success: false,
+      message: "Security verification is not configured.",
+    });
+  }
+  if (!matchesRecaptchaProxySecret(req.get("x-recaptcha-proxy-secret"), expectedProxySecret)) {
+    return res.status(401).json({ success: false, message: "Unauthorized verification request." });
+  }
+
+  const body = req.body && typeof req.body === "object" ? req.body : {};
+  const formType = typeof body.formType === "string" ? body.formType : "";
+  const expectedAction = RECAPTCHA_ACTION_BY_FORM_TYPE[formType];
+  const token = req.get("x-recaptcha-token");
+  const siteKey = typeof body.siteKey === "string" ? body.siteKey.trim() : "";
+
+  if (!expectedAction || !siteKey || !token || token.length > 4096) {
+    return res.status(400).json({ success: false, message: "Security verification failed." });
+  }
+
+  const projectId = process.env.RECAPTCHA_PROJECT_ID;
+  const apiKey = process.env.RECAPTCHA_ENTERPRISE_API_KEY;
+  const configuredHostnames = process.env.RECAPTCHA_ALLOWED_HOSTNAMES;
+  const defaultHostnames = ["indiametexpo.com", "www.indiametexpo.com"];
+  if (process.env.NODE_ENV !== "production") {
+    defaultHostnames.push("localhost", "127.0.0.1");
+  }
+  const allowedHostnames = new Set(
+    (configuredHostnames ? configuredHostnames.split(",") : defaultHostnames)
+      .map(normalizeRecaptchaHostname)
+      .filter(Boolean),
+  );
+  const minScore = Number(process.env.RECAPTCHA_MIN_SCORE || "0.5");
+
+  if (!projectId || !apiKey || allowedHostnames.size === 0 ||
+      !Number.isFinite(minScore) || minScore < 0 || minScore > 1) {
+    return res.status(503).json({
+      success: false,
+      message: "Security verification is not configured.",
+    });
+  }
+
+  try {
+    const event = { token, siteKey, expectedAction };
+    const userAgent = req.get("x-recaptcha-user-agent");
+    const userIpAddress = req.get("x-recaptcha-user-ip");
+    if (userAgent && userAgent.length <= 512) event.userAgent = userAgent;
+    if (userIpAddress && isIP(userIpAddress)) event.userIpAddress = userIpAddress;
+
+    const assessmentUrl = new URL(
+      "https://recaptchaenterprise.googleapis.com/v1/projects/" +
+        encodeURIComponent(projectId) + "/assessments",
+    );
+    assessmentUrl.searchParams.set("key", apiKey);
+
+    const googleResponse = await fetch(assessmentUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ event }),
+      signal: AbortSignal.timeout(10000),
+    });
+    const assessment = await googleResponse.json().catch(() => null);
+    if (!googleResponse.ok || !assessment) {
+      console.error("Google CreateAssessment request failed", { status: googleResponse.status });
+      return res.status(503).json({
+        success: false,
+        message: "Security verification is temporarily unavailable.",
+      });
+    }
+
+    const tokenProperties = assessment.tokenProperties || {};
+    const hostname = normalizeRecaptchaHostname(tokenProperties.hostname);
+    const score = Number(assessment.riskAnalysis?.score);
+    const accepted =
+      tokenProperties.valid === true &&
+      tokenProperties.action === expectedAction &&
+      allowedHostnames.has(hostname) &&
+      Number.isFinite(score) &&
+      score >= minScore;
+
+    if (!accepted) {
+      return res.status(400).json({ success: false, message: "Security verification failed." });
+    }
+
+    return res.json({ success: true });
+  } catch (error) {
+    console.error("Google CreateAssessment request failed", error.message);
+    return res.status(503).json({
+      success: false,
+      message: "Security verification is temporarily unavailable.",
+    });
+  }
+});
 
 router.post("/", async (req, res) => {
   try {
